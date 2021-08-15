@@ -1,11 +1,12 @@
 package org.virginiaso.roster_diff;
 
-import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-class AppTest {
-    @Test void appHasAGreeting() {
-        App classUnderTest = new App();
-        assertNotNull(classUnderTest.getGreeting(), "app should have a greeting");
-    }
+import org.junit.jupiter.api.Test;
+
+public class AppTest {
+	@Test
+	public void appHasAGreeting() {
+		assertNotNull(App.getGreeting(), "app should have a greeting");
+	}
 }
