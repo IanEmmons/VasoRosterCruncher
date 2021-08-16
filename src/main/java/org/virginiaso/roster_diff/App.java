@@ -61,5 +61,9 @@ public class App {
 
 		System.out.format("Found %1$d portal students and %2$d Scilimpiad students%n",
 			portalStudents.size(), scilympiadStudents.size());
+
+		SimpleDiffEngine engine = SimpleDiffEngine.compare(portalStudents, scilympiadStudents);
+
+		System.out.format("Found %1$d matches%n", engine.getMatches().size());
 	}
 }

@@ -47,6 +47,7 @@ public class ScilympiadStudent {
 
 	public static List<ScilympiadStudent> parse(File scilympiadStudentFile)
 			throws IOException, ParseException, InvalidFormatException {
+		Stopwatch timer = new Stopwatch();
 		try (XSSFWorkbook workbook = new XSSFWorkbook(scilympiadStudentFile)) {
 			List<ScilympiadStudent> result = new ArrayList<>();
 
@@ -80,6 +81,7 @@ public class ScilympiadStudent {
 				}
 			}
 
+			timer.stopAndReport("Parsed Scilympiad student file");
 			return result;
 		}
 	}

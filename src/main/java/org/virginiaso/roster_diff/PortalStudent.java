@@ -27,11 +27,15 @@ public class PortalStudent {
 	public final int grade;
 
 	public static List<PortalStudent> parse(File portalStudentFile) throws IOException {
+		Stopwatch timer = new Stopwatch();
+		List<PortalStudent> result;
 		try (CSVParser parser = CSVParser.parse(portalStudentFile, CHARSET, FORMAT)) {
-			return parser.stream()
+			result = parser.stream()
 				.map(PortalStudent::new)
 				.collect(Collectors.toUnmodifiableList());
 		}
+		timer.stopAndReport("Parsed portal student file");
+		return result;
 	}
 
 	private PortalStudent(CSVRecord record) {
