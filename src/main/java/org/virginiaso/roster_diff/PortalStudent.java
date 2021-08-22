@@ -40,10 +40,17 @@ public class PortalStudent {
 
 	private PortalStudent(CSVRecord record) {
 		fullName = Util.normalizeSpace(record.get("Student Legal Name"));
-		firstName = Util.normalizeSpace(record.get("Student Legal Name: First"));
-		lastName = Util.normalizeSpace(record.get("Student Legal Name: Last"));
-		nickName = Util.normalizeSpace(record.get("Student Nickname"));
-		school = Util.normalizeSpace(record.get("School"));
+		firstName = Util.normalizeSpace(record.get("Student Legal Name: First")).toLowerCase();
+		lastName = Util.normalizeSpace(record.get("Student Legal Name: Last")).toLowerCase();
+		nickName = Util.normalizeSpace(record.get("Student Nickname")).toLowerCase();
+		school = SchoolNameNormalizer.normalize(Util.normalizeSpace(record.get("School")).toLowerCase());
 		grade = Integer.parseInt(Util.normalizeSpace(record.get("Grade")));
+	}
+
+	@Override
+	public String toString() {
+		return String.format(
+			"PortalStudent [grade=%d, last=%s, first=%s, nick=%s, school=%s]",
+			grade, lastName, firstName, nickName, school);
 	}
 }

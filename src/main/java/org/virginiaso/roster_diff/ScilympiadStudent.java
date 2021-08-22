@@ -1,7 +1,9 @@
 package org.virginiaso.roster_diff;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -48,7 +50,10 @@ public class ScilympiadStudent {
 	public static List<ScilympiadStudent> parse(File scilympiadStudentFile)
 			throws IOException, ParseException, InvalidFormatException {
 		Stopwatch timer = new Stopwatch();
-		try (XSSFWorkbook workbook = new XSSFWorkbook(scilympiadStudentFile)) {
+		try (
+			InputStream is = new FileInputStream(scilympiadStudentFile);
+			XSSFWorkbook workbook = new XSSFWorkbook(is);
+		) {
 			List<ScilympiadStudent> result = new ArrayList<>();
 
 			String currentSchool = "";
@@ -107,15 +112,15 @@ public class ScilympiadStudent {
 
 	private ScilympiadStudent(String school, String teamName, String teamNumber,
 			String fullName, String grade, int rowNum) throws ParseException {
-		this.school = school;
-		this.teamName = teamName;
-		this.teamNumber = teamNumber;
+		this.school = SchoolNameNormalizer.normalize(school.toLowerCase());
+		this.teamName = teamName.toLowerCase();
+		this.teamNumber = teamNumber.toLowerCase();
 		this.fullName = fullName;
 
 		String[] pieces = splitFullName(this.fullName);
 		if (pieces.length == 2) {
-			firstName = pieces[1];
-			lastName = pieces[0];
+			firstName = pieces[1].toLowerCase();
+			lastName = pieces[0].toLowerCase();
 		} else {
 			throw new ParseException("Name '%1$s' in row %2$d is not in last, first format",
 				this.fullName, rowNum);
@@ -135,5 +140,12 @@ public class ScilympiadStudent {
 			pieces[i] = pieces[i].trim();
 		}
 		return pieces;
+	}
+
+	@Override
+	public String toString() {
+		return String.format(
+			"ScilympiadStudent [grade=%d, last=%s, first=%s, school=%s]",
+			grade, lastName, firstName, school);
 	}
 }

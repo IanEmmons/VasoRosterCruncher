@@ -1,43 +1,45 @@
 package org.virginiaso.roster_diff;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.commons.lang3.tuple.Pair;
 
-public class SimpleDiffEngine {
+public class DifferenceEngine {
 	private final List<PortalStudent> pStudents;
 	private final List<ScilympiadStudent> sStudents;
 	private final List<Pair<PortalStudent, ScilympiadStudent>> matches;
 	private final List<PortalStudent> pStudentsNotFoundInS;
 	private final List<ScilympiadStudent> sStudentsNotFoundInP;
+	private final Map<ScilympiadStudent, List<Pair<PortalStudent, Integer>>> results;
 
-	public static SimpleDiffEngine compare(List<PortalStudent> pStudents,
-			List<ScilympiadStudent> sStudents) {
+	public static DifferenceEngine compare(List<PortalStudent> pStudents,
+			List<ScilympiadStudent> sStudents, DistanceFunction distanceFunction) {
 		Stopwatch timer = new Stopwatch();
-		SimpleDiffEngine engine = new SimpleDiffEngine(pStudents, sStudents);
-		engine.compare();
-		timer.stopAndReport("Performed simple comparison");
+		DifferenceEngine engine = new DifferenceEngine(pStudents, sStudents);
+		engine.compare(distanceFunction);
+		timer.stopAndReport("Performed comparison");
 		return engine;
 	}
 
-	private SimpleDiffEngine(List<PortalStudent> pStudents,
+	private DifferenceEngine(List<PortalStudent> pStudents,
 			List<ScilympiadStudent> sStudents) {
 		this.pStudents = pStudents;
 		this.sStudents = sStudents;
 		matches = new ArrayList<>();
 		pStudentsNotFoundInS = new ArrayList<>();
 		sStudentsNotFoundInP = new ArrayList<>();
+		results = new HashMap<>();
 	}
 
-	private void compare() {
+	private void compare(DistanceFunction distanceFunction) {
 		for (PortalStudent pStudent : pStudents) {
 			for (ScilympiadStudent sStudent : sStudents) {
-				if (pStudent.lastName.equalsIgnoreCase(sStudent.lastName)
-					&& (pStudent.firstName.equalsIgnoreCase(sStudent.firstName)
-						|| pStudent.nickName.equalsIgnoreCase(sStudent.firstName))) {
-					matches.add(Pair.of(pStudent, sStudent));
-				}
+				int distance = distanceFunction.applyAsInt(pStudent, sStudent);
+				results.computeIfAbsent(sStudent, key -> new ArrayList<>())
+					.add(Pair.of(pStudent, distance));
 			}
 		}
 	}
@@ -52,5 +54,9 @@ public class SimpleDiffEngine {
 
 	public List<ScilympiadStudent> getsStudentsNotFoundInP() {
 		return sStudentsNotFoundInP;
+	}
+
+	public Map<ScilympiadStudent, List<Pair<PortalStudent, Integer>>> getResults() {
+		return results;
 	}
 }
