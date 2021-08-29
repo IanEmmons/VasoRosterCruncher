@@ -3,8 +3,6 @@ package org.virginiaso.roster_diff;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 
@@ -64,29 +62,26 @@ public class App {
 			new WeightAvgDistanceFunction());
 
 		System.out.print(engine.formatDistanceHistogram());
-		System.out.format("Exact matches: %1$d%n", engine.getExactMatches().size());
-		System.out.format("Portal students not in Scilympiad: %1$d%n", engine.getPStudentsNotFoundInS().size());
-		//engine.getpStudentsNotFoundInS().stream().forEach(pStudent -> System.out.format("   %1$s%n", pStudent));
-		System.out.format("Scilympiad students not in the Portal: %1$d%n", engine.getSStudentsNotFoundInP().size());
-		//engine.getpStudentsNotFoundInS().stream().forEach(sStudent -> System.out.format("   %1$s%n", sStudent));
+		System.out.format("Exact matches: %1$d%n",
+			engine.getExactMatches().size());
+		System.out.format("Portal students not in Scilympiad: %1$d%n",
+			engine.getPStudentsNotFoundInS().size());
+		System.out.format("Scilympiad students not in the Portal: %1$d%n",
+			engine.getSStudentsNotFoundInP().size());
 
-		for (Map.Entry<ScilympiadStudent, Map<Integer, List<PortalStudent>>> entry : engine.getResults().entrySet()) {
-			reportMatch(entry.getKey(), entry.getValue());
+		File reportDir = getReportDir();
+		ReportBuilder.newReport(engine, reportDir, null);
+		ReportBuilder.newReport(engine, reportDir, "marshall hs");
+	}
+
+	private static File getReportDir() {
+		File reportDir = new File(String
+			.format("reports-%1$TF_%1$TT", System.currentTimeMillis())
+			.replace(':', '-'));
+		if (reportDir.exists()) {
+			throw new IllegalStateException(String.format(
+				"Report directory '%1$s' already exists", reportDir.getPath()));
 		}
-
-		ReportBuilder.newReport(engine, "all");
-	}
-
-	private static void reportMatch(ScilympiadStudent sStudent,
-			Map<Integer, List<PortalStudent>> matches) {
-		System.out.format("%n%1$s:%n%2$s", sStudent, matches.entrySet().stream()
-			.map(entry -> reportMatchHelper(entry.getKey(), entry.getValue()))
-			.collect(Collectors.joining()));
-	}
-
-	private static String reportMatchHelper(int distance, List<PortalStudent> pStudents) {
-		return pStudents.stream()
-			.map(pStudent -> String.format("   %1$d: %2$s%n", distance, pStudent))
-			.collect(Collectors.joining());
+		return reportDir;
 	}
 }
