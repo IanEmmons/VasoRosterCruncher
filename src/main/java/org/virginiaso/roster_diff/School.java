@@ -12,7 +12,7 @@ import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.lang3.tuple.Pair;
 
-public class SchoolNameNormalizer {
+public class School {
 	private static final String RESOURCE_NAME = "SchoolNameNormalizations.csv";
 	private static final Charset CHARSET = StandardCharsets.UTF_8;
 	private static final CSVFormat FORMAT = CSVFormat.DEFAULT.builder()
@@ -35,9 +35,11 @@ public class SchoolNameNormalizer {
 		}
 	}
 
-	private SchoolNameNormalizer() {}	// prevent instantiation
+	private School() {}	// prevent instantiation
 
 	public static String normalize(String schoolName) {
+		schoolName = schoolName.toLowerCase();
+		schoolName = Util.normalizeSpace(schoolName);
 		for (Pair<String, String> translation : TRANSLATIONS) {
 			schoolName = schoolName.replace(translation.getLeft(), translation.getRight());
 		}

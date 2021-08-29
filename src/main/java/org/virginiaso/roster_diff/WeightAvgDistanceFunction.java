@@ -5,8 +5,8 @@ import org.apache.commons.text.similarity.LevenshteinDistance;
 public class WeightAvgDistanceFunction implements DistanceFunction {
 	private static final int LAST_WEIGHT = 1;		// 2 or 1
 	private static final int FIRST_WEIGHT = 1;
-	private static final int GRADE_WEIGHT = 1;	// 10
-	private static final int SCHOOL_WEIGHT = 1;	// 10
+	private static final int GRADE_WEIGHT = 3;	// 10
+	private static final int SCHOOL_WEIGHT = 10;	// 10
 	/*
 	 * school = 10
 	 * grade = 10

@@ -1,7 +1,9 @@
 package org.virginiaso.roster_diff;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
@@ -12,8 +14,8 @@ import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
 
 public class PortalStudent {
-	private static final Charset CHARSET = StandardCharsets.UTF_8;
-	private static final CSVFormat FORMAT = CSVFormat.DEFAULT.builder()
+	static final Charset CHARSET = StandardCharsets.UTF_8;
+	static final CSVFormat FORMAT = CSVFormat.DEFAULT.builder()
 		.setHeader()
 		.setIgnoreEmptyLines(true)
 		.setTrim(true)
@@ -27,9 +29,21 @@ public class PortalStudent {
 	public final int grade;
 
 	public static List<PortalStudent> parse(File portalStudentFile) throws IOException {
+		try (InputStream is = new FileInputStream(portalStudentFile)) {
+			return parse(is);
+		}
+	}
+
+	public static List<PortalStudent> parse(String portalStudentResource) throws IOException {
+		try (InputStream is = Util.getResourceAsInputStream(portalStudentResource)) {
+			return parse(is);
+		}
+	}
+
+	public static List<PortalStudent> parse(InputStream portalStudentStream) throws IOException {
 		Stopwatch timer = new Stopwatch();
 		List<PortalStudent> result;
-		try (CSVParser parser = CSVParser.parse(portalStudentFile, CHARSET, FORMAT)) {
+		try (CSVParser parser = CSVParser.parse(portalStudentStream, CHARSET, FORMAT)) {
 			result = parser.stream()
 				.map(PortalStudent::new)
 				.collect(Collectors.toUnmodifiableList());
@@ -43,7 +57,7 @@ public class PortalStudent {
 		firstName = Util.normalizeSpace(record.get("Student Legal Name: First")).toLowerCase();
 		lastName = Util.normalizeSpace(record.get("Student Legal Name: Last")).toLowerCase();
 		nickName = Util.normalizeSpace(record.get("Student Nickname")).toLowerCase();
-		school = SchoolNameNormalizer.normalize(Util.normalizeSpace(record.get("School")).toLowerCase());
+		school = School.normalize(record.get("School"));
 		grade = Integer.parseInt(Util.normalizeSpace(record.get("Grade")));
 	}
 

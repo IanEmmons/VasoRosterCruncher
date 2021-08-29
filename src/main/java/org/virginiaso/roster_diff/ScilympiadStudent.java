@@ -10,7 +10,6 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Row.MissingCellPolicy;
@@ -18,7 +17,7 @@ import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
 public class ScilympiadStudent {
-	private static enum Column {
+	static enum Column {
 		TEAM_NUMBER(0),
 		STUDENT_NAME(1),
 		GRADE(3);
@@ -30,7 +29,7 @@ public class ScilympiadStudent {
 		}
 	}
 
-	private static final Pattern SCHOOL_PATTERN = Pattern.compile(
+	static final Pattern SCHOOL_PATTERN = Pattern.compile(
 		"^School: (.*)$", Pattern.CASE_INSENSITIVE);
 	private static final Pattern TEAM_NAME_PATTERN = Pattern.compile(
 		"^Team Name: (.*)$", Pattern.CASE_INSENSITIVE);
@@ -48,12 +47,23 @@ public class ScilympiadStudent {
 	public final int grade;
 
 	public static List<ScilympiadStudent> parse(File scilympiadStudentFile)
-			throws IOException, ParseException, InvalidFormatException {
+			throws IOException, ParseException {
+		try (InputStream is = new FileInputStream(scilympiadStudentFile)) {
+			return parse(is);
+		}
+	}
+
+	public static List<ScilympiadStudent> parse(String scilympiadStudentResource)
+			throws IOException, ParseException {
+		try (InputStream is = Util.getResourceAsInputStream(scilympiadStudentResource)) {
+			return parse(is);
+		}
+	}
+
+	public static List<ScilympiadStudent> parse(InputStream scilympiadStudentStream)
+			throws IOException, ParseException {
 		Stopwatch timer = new Stopwatch();
-		try (
-			InputStream is = new FileInputStream(scilympiadStudentFile);
-			XSSFWorkbook workbook = new XSSFWorkbook(is);
-		) {
+		try (XSSFWorkbook workbook = new XSSFWorkbook(scilympiadStudentStream)) {
 			List<ScilympiadStudent> result = new ArrayList<>();
 
 			String currentSchool = "";
@@ -91,7 +101,7 @@ public class ScilympiadStudent {
 		}
 	}
 
-	private static String getCellValue(Row row, Column column) {
+	static String getCellValue(Row row, Column column) {
 		Cell cell = row.getCell(column.columnIndex, MissingCellPolicy.RETURN_BLANK_AS_NULL);
 		if (cell == null) {
 			return "";
@@ -103,7 +113,7 @@ public class ScilympiadStudent {
 		}
 	}
 
-	private static String getMatchedPortion(String str, Pattern pattern) {
+	static String getMatchedPortion(String str, Pattern pattern) {
 		Matcher m = pattern.matcher(str);
 		return m.matches()
 			? m.group(1)
@@ -112,7 +122,7 @@ public class ScilympiadStudent {
 
 	private ScilympiadStudent(String school, String teamName, String teamNumber,
 			String fullName, String grade, int rowNum) throws ParseException {
-		this.school = SchoolNameNormalizer.normalize(school.toLowerCase());
+		this.school = School.normalize(school);
 		this.teamName = teamName.toLowerCase();
 		this.teamNumber = teamNumber.toLowerCase();
 		this.fullName = fullName;
