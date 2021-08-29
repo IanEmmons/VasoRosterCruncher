@@ -9,8 +9,6 @@ import java.util.stream.Collectors;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 
 public class App {
-	private static final int DISTANCE_THRESHOLD = 4;
-
 	private final File portalFile;
 	private final File scilympiadFile;
 
@@ -67,14 +65,16 @@ public class App {
 
 		System.out.print(engine.formatDistanceHistogram());
 		System.out.format("Exact matches: %1$d%n", engine.getExactMatches().size());
-		System.out.format("Portal students not in Scilympiad: %1$d%n", engine.getpStudentsNotFoundInS().size());
+		System.out.format("Portal students not in Scilympiad: %1$d%n", engine.getPStudentsNotFoundInS().size());
 		//engine.getpStudentsNotFoundInS().stream().forEach(pStudent -> System.out.format("   %1$s%n", pStudent));
-		System.out.format("Scilympiad students not in the Portal: %1$d%n", engine.getsStudentsNotFoundInP().size());
+		System.out.format("Scilympiad students not in the Portal: %1$d%n", engine.getSStudentsNotFoundInP().size());
 		//engine.getpStudentsNotFoundInS().stream().forEach(sStudent -> System.out.format("   %1$s%n", sStudent));
 
 		for (Map.Entry<ScilympiadStudent, Map<Integer, List<PortalStudent>>> entry : engine.getResults().entrySet()) {
 			reportMatch(entry.getKey(), entry.getValue());
 		}
+
+		ReportBuilder.newReport(engine, "all");
 	}
 
 	private static void reportMatch(ScilympiadStudent sStudent,

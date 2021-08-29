@@ -13,12 +13,13 @@ public class Stopwatch {
 		duration = (System.currentTimeMillis() - start) / 1000.0;
 	}
 
-	public void report(String message) {
+	public void report(String messageFormat, Object... args) {
+		String message = String.format(messageFormat, args);
 		System.out.format("%1$s in %2$.1f seconds%n", message, duration);
 	}
 
-	public void stopAndReport(String message) {
+	public void stopAndReport(String messageFormat, Object... args) {
 		stop();
-		report(message);
+		report(messageFormat, args);
 	}
 }

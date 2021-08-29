@@ -123,11 +123,11 @@ public class DifferenceEngine {
 		return exactMatches;
 	}
 
-	public Set<PortalStudent> getpStudentsNotFoundInS() {
+	public Set<PortalStudent> getPStudentsNotFoundInS() {
 		return pStudentsNotFoundInS;
 	}
 
-	public Set<ScilympiadStudent> getsStudentsNotFoundInP() {
+	public Set<ScilympiadStudent> getSStudentsNotFoundInP() {
 		return sStudentsNotFoundInP;
 	}
 
