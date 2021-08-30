@@ -1,13 +1,12 @@
 package org.virginiaso.roster_diff;
 
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.tuple.Pair;
@@ -36,9 +35,9 @@ public class DifferenceEngine {
 		this.pStudents = pStudents;
 		this.sStudents = sStudents;
 		exactMatches = new ArrayList<>();
-		pStudentsNotFoundInS = new HashSet<>();
-		sStudentsNotFoundInP = new HashSet<>();
-		results = new HashMap<>();
+		pStudentsNotFoundInS = new TreeSet<>();
+		sStudentsNotFoundInP = new TreeSet<>();
+		results = new TreeMap<>();
 	}
 
 	private void compare(DistanceFunction distanceFunction) {

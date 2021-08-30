@@ -7,16 +7,18 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.apache.commons.lang3.builder.CompareToBuilder;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Row.MissingCellPolicy;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
-public class ScilympiadStudent {
+public class ScilympiadStudent implements Comparable<ScilympiadStudent> {
 	static enum Column {
 		TEAM_NUMBER(0),
 		STUDENT_NAME(1),
@@ -41,7 +43,6 @@ public class ScilympiadStudent {
 	public final String school;
 	public final String teamName;
 	public final String teamNumber;
-	public final String fullName;
 	public final String firstName;
 	public final String lastName;
 	public final int grade;
@@ -125,15 +126,14 @@ public class ScilympiadStudent {
 		this.school = School.normalize(school);
 		this.teamName = teamName.toLowerCase();
 		this.teamNumber = teamNumber.toLowerCase();
-		this.fullName = fullName;
 
-		String[] pieces = splitFullName(this.fullName);
+		String[] pieces = splitFullName(fullName);
 		if (pieces.length == 2) {
 			firstName = pieces[1].toLowerCase();
 			lastName = pieces[0].toLowerCase();
 		} else {
 			throw new ParseException("Name '%1$s' in row %2$d is not in last, first format",
-				this.fullName, rowNum);
+				fullName, rowNum);
 		}
 
 		String gradeNumStr = getMatchedPortion(grade, GRADE_PATTERN);
@@ -150,6 +150,34 @@ public class ScilympiadStudent {
 			pieces[i] = pieces[i].trim();
 		}
 		return pieces;
+	}
+
+	@Override
+	public int hashCode() {
+		return Objects.hash(school, lastName, firstName, grade, teamName, teamNumber);
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj) {
+			return true;
+		} else if (!(obj instanceof ScilympiadStudent)) {
+			return false;
+		} else {
+			return this.compareTo((ScilympiadStudent) obj) == 0;
+		}
+	}
+
+	@Override
+	public int compareTo(ScilympiadStudent rhs) {
+		return new CompareToBuilder()
+			.append(this.school, rhs.school)
+			.append(this.lastName, rhs.lastName)
+			.append(this.firstName, rhs.firstName)
+			.append(this.grade, rhs.grade)
+			.append(this.teamName, rhs.teamName)
+			.append(this.teamNumber, rhs.teamNumber)
+			.toComparison();
 	}
 
 	@Override

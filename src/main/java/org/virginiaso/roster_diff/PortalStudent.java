@@ -7,13 +7,15 @@ import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
+import org.apache.commons.lang3.builder.CompareToBuilder;
 
-public class PortalStudent {
+public class PortalStudent implements Comparable<PortalStudent> {
 	static final Charset CHARSET = StandardCharsets.UTF_8;
 	static final CSVFormat FORMAT = CSVFormat.DEFAULT.builder()
 		.setHeader()
@@ -21,7 +23,6 @@ public class PortalStudent {
 		.setTrim(true)
 		.build();
 
-	public final String fullName;
 	public final String firstName;
 	public final String lastName;
 	public final String nickName;
@@ -53,12 +54,38 @@ public class PortalStudent {
 	}
 
 	private PortalStudent(CSVRecord record) {
-		fullName = Util.normalizeSpace(record.get("Student Legal Name"));
 		firstName = Util.normalizeSpace(record.get("Student Legal Name: First")).toLowerCase();
 		lastName = Util.normalizeSpace(record.get("Student Legal Name: Last")).toLowerCase();
 		nickName = Util.normalizeSpace(record.get("Student Nickname")).toLowerCase();
 		school = School.normalize(record.get("School"));
 		grade = Integer.parseInt(Util.normalizeSpace(record.get("Grade")));
+	}
+
+	@Override
+	public int hashCode() {
+		return Objects.hash(school, lastName, firstName, nickName, grade);
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj) {
+			return true;
+		} else if (!(obj instanceof PortalStudent)) {
+			return false;
+		} else {
+			return this.compareTo((PortalStudent) obj) == 0;
+		}
+	}
+
+	@Override
+	public int compareTo(PortalStudent rhs) {
+		return new CompareToBuilder()
+			.append(this.school, rhs.school)
+			.append(this.lastName, rhs.lastName)
+			.append(this.firstName, rhs.firstName)
+			.append(this.nickName, rhs.nickName)
+			.append(this.grade, rhs.grade)
+			.toComparison();
 	}
 
 	@Override
