@@ -16,8 +16,8 @@ import org.apache.commons.csv.CSVRecord;
 import org.apache.commons.lang3.builder.CompareToBuilder;
 
 public class PortalStudent implements Comparable<PortalStudent> {
-	static final Charset CHARSET = StandardCharsets.UTF_8;
-	static final CSVFormat FORMAT = CSVFormat.DEFAULT.builder()
+	private static final Charset CHARSET = StandardCharsets.UTF_8;
+	private static final CSVFormat FORMAT = CSVFormat.DEFAULT.builder()
 		.setHeader()
 		.setIgnoreEmptyLines(true)
 		.setTrim(true)
@@ -59,6 +59,14 @@ public class PortalStudent implements Comparable<PortalStudent> {
 		nickName = Util.normalizeSpace(record.get("Student Nickname")).toLowerCase();
 		school = School.normalize(record.get("School"));
 		grade = Integer.parseInt(Util.normalizeSpace(record.get("Grade")));
+	}
+
+	PortalStudent(String firstName, String lastName, String nickName, String school, int grade) {
+		this.firstName = Util.normalizeSpace(firstName).toLowerCase();
+		this.lastName = Util.normalizeSpace(lastName).toLowerCase();
+		this.nickName = Util.normalizeSpace(nickName).toLowerCase();
+		this.school = School.normalize(school);
+		this.grade = grade;
 	}
 
 	@Override

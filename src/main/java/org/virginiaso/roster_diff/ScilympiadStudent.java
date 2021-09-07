@@ -16,6 +16,7 @@ import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Row.MissingCellPolicy;
 import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
 public class ScilympiadStudent implements Comparable<ScilympiadStudent> {
@@ -64,7 +65,7 @@ public class ScilympiadStudent implements Comparable<ScilympiadStudent> {
 	public static List<ScilympiadStudent> parse(InputStream scilympiadStudentStream)
 			throws IOException, ParseException {
 		Stopwatch timer = new Stopwatch();
-		try (XSSFWorkbook workbook = new XSSFWorkbook(scilympiadStudentStream)) {
+		try (Workbook workbook = new XSSFWorkbook(scilympiadStudentStream)) {
 			List<ScilympiadStudent> result = new ArrayList<>();
 
 			String currentSchool = "";
@@ -144,6 +145,16 @@ public class ScilympiadStudent implements Comparable<ScilympiadStudent> {
 		}
 	}
 
+	ScilympiadStudent(String school, String teamName, String teamNumber,
+		String lastName, String firstName, int grade, int rowNum) {
+		this.school = School.normalize(school);
+		this.teamName = Util.normalizeSpace(teamName).toLowerCase();
+		this.teamNumber = Util.normalizeSpace(teamNumber).toLowerCase();
+		this.lastName = Util.normalizeSpace(lastName).toLowerCase();
+		this.firstName = Util.normalizeSpace(firstName).toLowerCase();
+		this.grade = grade;
+	}
+
 	private static String[] splitFullName(String fullName) {
 		String[] pieces = fullName.split(",", 2);
 		for (int i = 0; i < pieces.length; ++i) {
@@ -154,7 +165,7 @@ public class ScilympiadStudent implements Comparable<ScilympiadStudent> {
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(school, lastName, firstName, grade, teamName, teamNumber);
+		return Objects.hash(school, lastName, firstName, grade);
 	}
 
 	@Override
@@ -175,8 +186,6 @@ public class ScilympiadStudent implements Comparable<ScilympiadStudent> {
 			.append(this.lastName, rhs.lastName)
 			.append(this.firstName, rhs.firstName)
 			.append(this.grade, rhs.grade)
-			.append(this.teamName, rhs.teamName)
-			.append(this.teamNumber, rhs.teamNumber)
 			.toComparison();
 	}
 

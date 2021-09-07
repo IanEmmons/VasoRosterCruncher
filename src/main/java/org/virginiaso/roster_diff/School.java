@@ -1,30 +1,39 @@
 package org.virginiaso.roster_diff;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
+import org.apache.commons.csv.CSVRecord;
 import org.apache.commons.lang3.tuple.Pair;
 
 public class School {
-	private static final String RESOURCE_NAME = "SchoolNameNormalizations.csv";
-	private static final Charset CHARSET = StandardCharsets.UTF_8;
-	private static final CSVFormat FORMAT = CSVFormat.DEFAULT.builder()
+	static final Charset CHARSET = StandardCharsets.UTF_8;
+	static final CSVFormat FORMAT = CSVFormat.DEFAULT.builder()
 		.setHeader()
 		.setIgnoreEmptyLines(true)
 		.setTrim(true)
 		.build();
+	private static final String TRANSLATION_RESOURCE = "SchoolNameNormalizations.csv";
 	private static final List<Pair<String, String>> TRANSLATIONS;
+	private static final String[] EMAIL_COLUMNS = { "Coach 1", "Coach 2", "Coach 3" };
+
+	public final String name;
+	public final String normalizedName;
+	public final List<String> coachEmails;
 
 	static {
 		try (
-			InputStream is = Util.getResourceAsInputStream(RESOURCE_NAME);
+			InputStream is = Util.getResourceAsInputStream(TRANSLATION_RESOURCE);
 			CSVParser parser = CSVParser.parse(is, CHARSET, FORMAT);
 		) {
 			TRANSLATIONS = parser.stream()
@@ -35,8 +44,6 @@ public class School {
 		}
 	}
 
-	private School() {}	// prevent instantiation
-
 	public static String normalize(String schoolName) {
 		schoolName = schoolName.toLowerCase();
 		schoolName = Util.normalizeSpace(schoolName);
@@ -44,5 +51,40 @@ public class School {
 			schoolName = schoolName.replace(translation.getLeft(), translation.getRight());
 		}
 		return schoolName;
+	}
+
+	public static List<School> parse(File coachesFile) throws IOException {
+		try (InputStream is = new FileInputStream(coachesFile)) {
+			return parse(is);
+		}
+	}
+
+	public static List<School> parse(String coachesResource) throws IOException {
+		try (InputStream is = Util.getResourceAsInputStream(coachesResource)) {
+			return parse(is);
+		}
+	}
+
+	public static List<School> parse(InputStream coachesStream) throws IOException {
+		Stopwatch timer = new Stopwatch();
+		List<School> result;
+		try (CSVParser parser = CSVParser.parse(coachesStream, CHARSET, FORMAT)) {
+			result = parser.stream()
+				.map(School::new)
+				.collect(Collectors.toUnmodifiableList());
+		}
+		timer.stopAndReport("Parsed portal student file");
+		return result;
+	}
+
+	private School(CSVRecord record) {
+		name = Util.normalizeSpace(record.get("School"));
+		normalizedName = School.normalize(name);
+		coachEmails = Arrays.stream(EMAIL_COLUMNS)
+			.filter(record::isSet)
+			.map(record::get)
+			.map(Util::normalizeSpace)
+			.filter(email -> email != null && !email.isEmpty())
+			.collect(Collectors.toList());
 	}
 }

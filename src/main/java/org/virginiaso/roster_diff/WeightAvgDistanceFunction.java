@@ -7,11 +7,6 @@ public class WeightAvgDistanceFunction implements DistanceFunction {
 	private static final int FIRST_WEIGHT = 1;
 	private static final int GRADE_WEIGHT = 3;	// 10
 	private static final int SCHOOL_WEIGHT = 10;	// 10
-	/*
-	 * school = 10
-	 * grade = 10
-	 * last = 2 or 1
-	 */
 	private static final LevenshteinDistance LD = LevenshteinDistance.getDefaultInstance();
 
 	@Override

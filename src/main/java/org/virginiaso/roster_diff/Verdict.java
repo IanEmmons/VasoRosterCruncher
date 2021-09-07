@@ -1,0 +1,24 @@
+package org.virginiaso.roster_diff;
+
+import java.util.stream.Stream;
+
+public enum Verdict {
+	DIFFERENT,
+	SAME,
+	EXACT_MATCH;
+
+	public static Verdict fromMasterReport(String masterReportVerdict) {
+		String verdictToSearchFor = (masterReportVerdict == null)
+			? null
+			: masterReportVerdict.trim().toUpperCase();
+		Verdict result = Stream.of(values())
+			.filter(value -> value.name().equals(verdictToSearchFor))
+			.findFirst()
+			.orElse(null);
+		if (result == EXACT_MATCH) {
+			throw new IllegalStateException(
+				"Master report verdicts should not include EXACT_MATCH");
+		}
+		return result;
+	}
+}

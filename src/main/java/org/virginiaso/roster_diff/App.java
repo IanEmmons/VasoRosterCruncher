@@ -2,11 +2,15 @@ package org.virginiaso.roster_diff;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.EnumMap;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 
 public class App {
+	private final File coachesFile;
+	private final File masterReportFile;
 	private final File portalFile;
 	private final File scilympiadFile;
 
@@ -27,22 +31,28 @@ public class App {
 			System.out.format("%1$s%n%n", message);
 		}
 		System.out.format(
-			"Usage: %1$s <portal-students-file> <scilympiad_students-file>%n%n",
+			"Usage: %1$s <coaches-file> <report-all-file> <portal-file> <scilympiad-file>%n%n",
 			App.class.getName());
 	}
 
 	private App(String[] args) throws CmdLineException {
-		if (args.length < 2) {
+		if (args.length < 4) {
 			throw new CmdLineException("Too few arguments");
-		} else if (args.length > 2) {
+		} else if (args.length > 4) {
 			throw new CmdLineException("Too many arguments");
 		}
-		portalFile = parseFileArgument(args[0]);
-		scilympiadFile = parseFileArgument(args[1]);
+		coachesFile = parseRequiredFileArgument(args[0]);
+		masterReportFile = parseFileArgument(args[1]);
+		portalFile = parseRequiredFileArgument(args[2]);
+		scilympiadFile = parseRequiredFileArgument(args[3]);
 	}
 
-	private static File parseFileArgument(String arg) throws CmdLineException {
-		File result = new File(arg.trim());
+	private static File parseFileArgument(String arg) {
+		return new File(arg.trim());
+	}
+
+	private static File parseRequiredFileArgument(String arg) throws CmdLineException {
+		File result = parseFileArgument(arg);
 		if (!result.exists()) {
 			throw new CmdLineException("'%1$s' does not exist", arg);
 		} else if (!result.isFile()) {
@@ -52,26 +62,38 @@ public class App {
 	}
 
 	private void run() throws IOException, InvalidFormatException, ParseException {
+		@SuppressWarnings("unused")
+		List<School> schools = School.parse(coachesFile);
+		List<Match> matches = Match.parse(masterReportFile);
 		List<PortalStudent> pStudents = PortalStudent.parse(portalFile);
 		List<ScilympiadStudent> sStudents = ScilympiadStudent.parse(scilympiadFile);
 
 		System.out.format("Found %1$d portal students and %2$d Scilimpiad students%n",
 			pStudents.size(), sStudents.size());
 
-		DifferenceEngine engine = DifferenceEngine.compare(pStudents, sStudents,
+		DifferenceEngine engine = DifferenceEngine.compare(matches, pStudents, sStudents,
 			new WeightAvgDistanceFunction());
 
-		System.out.print(engine.formatDistanceHistogram());
-		System.out.format("Exact matches: %1$d%n",
-			engine.getExactMatches().size());
-		System.out.format("Portal students not in Scilympiad: %1$d%n",
+		//System.out.print(engine.formatDistanceHistogram());
+		EnumMap<Verdict, Long> verdictCounts = engine.getMatches().stream()
+			.collect(Collectors.groupingBy(
+				Match::getVerdict,						// classifier
+				() -> new EnumMap<>(Verdict.class),	// map factory
+				Collectors.counting()));				// downstream collector
+		System.out.format("Marked Same:      %1$3d%n",
+			verdictCounts.getOrDefault(Verdict.SAME, 0L));
+		System.out.format("Marked Different: %1$3d%n",
+			verdictCounts.getOrDefault(Verdict.DIFFERENT, 0L));
+		System.out.format("Exact matches:    %1$3d%n",
+			verdictCounts.getOrDefault(Verdict.EXACT_MATCH, 0L));
+		System.out.format("Portal students not in Scilympiad:     %1$3d%n",
 			engine.getPStudentsNotFoundInS().size());
-		System.out.format("Scilympiad students not in the Portal: %1$d%n",
+		System.out.format("Scilympiad students not in the Portal: %1$3d%n",
 			engine.getSStudentsNotFoundInP().size());
 
 		File reportDir = getReportDir();
-		ReportBuilder.newReport(engine, reportDir, null);
-		ReportBuilder.newReport(engine, reportDir, "marshall hs");
+		ReportBuilder.newReport(engine, masterReportFile, reportDir, null);
+		ReportBuilder.newReport(engine, masterReportFile, reportDir, "marshall hs");
 	}
 
 	private static File getReportDir() {

@@ -9,32 +9,62 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 
-import org.apache.commons.lang3.tuple.Pair;
-
 public class DifferenceEngine {
 	private static final int DISTANCE_THRESHOLD = 6;
 
-	private final List<PortalStudent> pStudents;
-	private final List<ScilympiadStudent> sStudents;
-	private final List<Pair<ScilympiadStudent, PortalStudent>> exactMatches;
+	private final Set<PortalStudent> pStudents;
+	private final Set<ScilympiadStudent> sStudents;
+	private final List<Match> matches;
 	private final Set<PortalStudent> pStudentsNotFoundInS;
 	private final Set<ScilympiadStudent> sStudentsNotFoundInP;
 	private final Map<ScilympiadStudent, Map<Integer, List<PortalStudent>>> results;
 
-	public static DifferenceEngine compare(List<PortalStudent> pStudents,
-			List<ScilympiadStudent> sStudents, DistanceFunction distanceFunction) {
+	public static DifferenceEngine compare(List<Match> manualMatches,
+			List<PortalStudent> pStudents, List<ScilympiadStudent> sStudents,
+			DistanceFunction distanceFunction) {
 		Stopwatch timer = new Stopwatch();
-		DifferenceEngine engine = new DifferenceEngine(pStudents, sStudents);
+		DifferenceEngine engine = new DifferenceEngine(manualMatches, pStudents, sStudents);
 		engine.compare(distanceFunction);
 		timer.stopAndReport("Performed comparison");
 		return engine;
 	}
 
-	private DifferenceEngine(List<PortalStudent> pStudents,
-			List<ScilympiadStudent> sStudents) {
-		this.pStudents = pStudents;
-		this.sStudents = sStudents;
-		exactMatches = new ArrayList<>();
+	private DifferenceEngine(List<Match> manualMatches, List<PortalStudent> pStudentList,
+			List<ScilympiadStudent> sStudentList) {
+		// Write out SAME and DIFFERENT matches (but not exact matches) in the master report
+		pStudents = new TreeSet<>(pStudentList);
+		sStudents = new TreeSet<>(sStudentList);
+
+		matches = new ArrayList<>();
+		for (Match match : manualMatches) {
+			// First, get the student from each list equal to the corresponding
+			// student in the match.  This ensures that we are preserving the most
+			// recent values of the student fields that are not used in the equality
+			// comparison (like team number).
+			PortalStudent pStudent = pStudents.stream()
+				.filter(match.getPStudent()::equals)
+				.findFirst()
+				.orElse(null);
+			ScilympiadStudent sStudent = sStudents.stream()
+				.filter(match.getSStudent()::equals)
+				.findFirst()
+				.orElse(null);
+			if (pStudent == null || sStudent == null) {
+				// Skip this match -- it's now invalid, because one of the two
+				// students no longer appears in the corresponding input file.
+			} else if (match.getVerdict() == Verdict.DIFFERENT) {
+				matches.add(new Match(sStudent, pStudent, match.getVerdict()));
+			} else if (match.getVerdict() == Verdict.SAME) {
+				matches.add(new Match(sStudent, pStudent, match.getVerdict()));
+				pStudents.remove(pStudent);
+				sStudents.remove(sStudent);
+			} else {
+				throw new IllegalStateException(String.format(
+					"Master report verdicts should be 'Different' or 'Same', not '%1$s'",
+					match.getVerdict()));
+			}
+		}
+
 		pStudentsNotFoundInS = new TreeSet<>();
 		sStudentsNotFoundInP = new TreeSet<>();
 		results = new TreeMap<>();
@@ -43,7 +73,15 @@ public class DifferenceEngine {
 	private void compare(DistanceFunction distanceFunction) {
 		for (PortalStudent pStudent : pStudents) {
 			for (ScilympiadStudent sStudent : sStudents) {
-				int distance = distanceFunction.applyAsInt(pStudent, sStudent);
+				boolean pairIsMarkedAsDifferent = matches.stream()
+					.filter(match -> Verdict.DIFFERENT.equals(match.getVerdict()))
+					.filter(match -> match.getPStudent().equals(pStudent))
+					.filter(match -> match.getSStudent().equals(sStudent))
+					.findAny()
+					.isPresent();
+				int distance = pairIsMarkedAsDifferent
+					? Integer.MAX_VALUE
+					: distanceFunction.applyAsInt(pStudent, sStudent);
 				results
 					.computeIfAbsent(sStudent, key -> new TreeMap<>())
 					.computeIfAbsent(distance, key -> new ArrayList<>())
@@ -54,23 +92,22 @@ public class DifferenceEngine {
 		// Compile a list of exact matches:
 		for (Map.Entry<ScilympiadStudent, Map<Integer, List<PortalStudent>>> entry : results.entrySet()) {
 			ScilympiadStudent sStudent = entry.getKey();
-			Map<Integer, List<PortalStudent>> matches = entry.getValue();
-			List<PortalStudent> zeros = matches.get(0);
-			if (zeros != null) {
-				zeros.stream()
-					.map(pStudent -> Pair.of(sStudent, pStudent))
-					.forEach(exactMatches::add);
+			List<PortalStudent> exactMatches = entry.getValue().get(0);
+			if (exactMatches != null) {
+				exactMatches.stream()
+					.map(pStudent -> new Match(sStudent, pStudent, Verdict.EXACT_MATCH))
+					.forEach(matches::add);
 			}
 		}
 
 		// Remove the exact matches from the results data structure:
-		for (Pair<ScilympiadStudent, PortalStudent> pair : exactMatches) {
-			ScilympiadStudent sStudent = pair.getLeft();
-			PortalStudent pStudent = pair.getRight();
-			results.remove(sStudent);
-			for (Map<Integer, List<PortalStudent>> outerValue : results.values()) {
-				for (List<PortalStudent> innerValue : outerValue.values()) {
-					innerValue.remove(pStudent);
+		for (Match match : matches) {
+			if (match.getVerdict() == Verdict.EXACT_MATCH) {
+				results.remove(match.getSStudent());
+				for (Map<Integer, List<PortalStudent>> outerValue : results.values()) {
+					for (List<PortalStudent> innerValue : outerValue.values()) {
+						innerValue.remove(match.getPStudent());
+					}
 				}
 			}
 		}
@@ -103,23 +140,16 @@ public class DifferenceEngine {
 		// Compile sets of unmatched students:
 		pStudentsNotFoundInS.addAll(pStudents);
 		sStudentsNotFoundInP.addAll(sStudents);
-		for (Pair<ScilympiadStudent, PortalStudent> pair : exactMatches) {
-			ScilympiadStudent sStudent = pair.getLeft();
-			PortalStudent pStudent = pair.getRight();
-			pStudentsNotFoundInS.remove(pStudent);
-			sStudentsNotFoundInP.remove(sStudent);
-		}
-		for (Map.Entry<ScilympiadStudent, Map<Integer, List<PortalStudent>>> entry : results.entrySet()) {
-			ScilympiadStudent sStudent = entry.getKey();
-			sStudentsNotFoundInP.remove(sStudent);
-			entry.getValue().values().stream()
-				.flatMap(List::stream)
-				.forEach(pStudentsNotFoundInS::remove);
+		for (Match match : matches) {
+			if (match.getVerdict() == Verdict.EXACT_MATCH) {
+				pStudentsNotFoundInS.remove(match.getPStudent());
+				sStudentsNotFoundInP.remove(match.getSStudent());
+			}
 		}
 	}
 
-	public List<Pair<ScilympiadStudent, PortalStudent>> getExactMatches() {
-		return exactMatches;
+	public List<Match> getMatches() {
+		return matches;
 	}
 
 	public Set<PortalStudent> getPStudentsNotFoundInS() {
@@ -156,7 +186,7 @@ public class DifferenceEngine {
 
 	public String formatDistanceHistogram() {
 		return computeDistanceHistogram().entrySet().stream()
-			.map(entry -> String.format("%1$2d: %2$4d", entry.getKey(), entry.getValue()))
+			.map(entry -> String.format("%1$2d: %2$2d", entry.getKey(), entry.getValue()))
 			.collect(Collectors.joining(
 				String.format("%n   "),
 				String.format("Histogram of distances:%n   "),
