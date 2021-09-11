@@ -5,8 +5,6 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -17,7 +15,6 @@ import org.apache.commons.csv.CSVRecord;
 import org.apache.commons.lang3.tuple.Pair;
 
 public class School {
-	static final Charset CHARSET = StandardCharsets.UTF_8;
 	static final CSVFormat FORMAT = CSVFormat.DEFAULT.builder()
 		.setHeader()
 		.setIgnoreEmptyLines(true)
@@ -34,7 +31,7 @@ public class School {
 	static {
 		try (
 			InputStream is = Util.getResourceAsInputStream(TRANSLATION_RESOURCE);
-			CSVParser parser = CSVParser.parse(is, CHARSET, FORMAT);
+			CSVParser parser = CSVParser.parse(is, App.CHARSET, FORMAT);
 		) {
 			TRANSLATIONS = parser.stream()
 				.map(record -> Pair.of(record.get("From").toLowerCase(), record.get("To").toLowerCase()))
@@ -68,7 +65,7 @@ public class School {
 	public static List<School> parse(InputStream coachesStream) throws IOException {
 		Stopwatch timer = new Stopwatch();
 		List<School> result;
-		try (CSVParser parser = CSVParser.parse(coachesStream, CHARSET, FORMAT)) {
+		try (CSVParser parser = CSVParser.parse(coachesStream, App.CHARSET, FORMAT)) {
 			result = parser.stream()
 				.map(School::new)
 				.collect(Collectors.toUnmodifiableList());

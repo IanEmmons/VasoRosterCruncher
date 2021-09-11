@@ -26,7 +26,7 @@ public class SchoolTest {
 
 		try (
 			InputStream is = Util.getResourceAsInputStream(P_RESOURCE);
-			CSVParser parser = CSVParser.parse(is, School.CHARSET, School.FORMAT);
+			CSVParser parser = CSVParser.parse(is, App.CHARSET, School.FORMAT);
 		) {
 			parser.stream()
 				.map(record -> record.get("School"))

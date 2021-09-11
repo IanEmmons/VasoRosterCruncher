@@ -4,8 +4,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -16,7 +14,6 @@ import org.apache.commons.csv.CSVRecord;
 import org.apache.commons.lang3.builder.CompareToBuilder;
 
 public class PortalStudent implements Comparable<PortalStudent> {
-	private static final Charset CHARSET = StandardCharsets.UTF_8;
 	private static final CSVFormat FORMAT = CSVFormat.DEFAULT.builder()
 		.setHeader()
 		.setIgnoreEmptyLines(true)
@@ -44,7 +41,7 @@ public class PortalStudent implements Comparable<PortalStudent> {
 	public static List<PortalStudent> parse(InputStream portalStudentStream) throws IOException {
 		Stopwatch timer = new Stopwatch();
 		List<PortalStudent> result;
-		try (CSVParser parser = CSVParser.parse(portalStudentStream, CHARSET, FORMAT)) {
+		try (CSVParser parser = CSVParser.parse(portalStudentStream, App.CHARSET, FORMAT)) {
 			result = parser.stream()
 				.map(PortalStudent::new)
 				.collect(Collectors.toUnmodifiableList());

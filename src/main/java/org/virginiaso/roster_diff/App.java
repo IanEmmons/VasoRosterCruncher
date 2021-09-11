@@ -2,6 +2,8 @@ package org.virginiaso.roster_diff;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -9,6 +11,8 @@ import java.util.stream.Collectors;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 
 public class App {
+	public static final Charset CHARSET = StandardCharsets.UTF_8;
+
 	private final File coachesFile;
 	private final File masterReportFile;
 	private final File portalFile;

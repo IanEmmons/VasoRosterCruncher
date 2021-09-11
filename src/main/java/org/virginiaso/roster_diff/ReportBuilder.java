@@ -12,6 +12,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.TreeMap;
 
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVPrinter;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.CellType;
@@ -36,6 +38,14 @@ public class ReportBuilder {
 	static final String PORTAL_ROW_LABEL = "Portal:";
 	private static final int VERDICT_COLUMN_NUMBER = 9;
 	private static final String[] VERDICT_COLUMN_VALUES = {"—", "Different", "Same"};
+	private static final String[] HEADINGS_FOR_STUDENTS_IN_ONLY_ONE_SYSTEM = {
+		"School", "Team Name", "Team Number", "Last Name", "First Name",
+		"Nickname", "Grade"
+	};
+	private static final CSVFormat FORMAT = CSVFormat.DEFAULT.builder()
+		.setHeader(HEADINGS_FOR_STUDENTS_IN_ONLY_ONE_SYSTEM)
+		.setTrim(true)
+		.build();
 
 	private static enum Style {
 		WHITE, GRAY,
@@ -58,18 +68,29 @@ public class ReportBuilder {
 			? null
 			: School.normalize(school);
 
-		try (Workbook workbook = new XSSFWorkbook(XSSFWorkbookType.XLSX)) {
-			if (normalizedSchool == null) {
-				createMatchesSheet(workbook);
+		if (normalizedSchool != null) {
+			long numSStudentsNotFoundInP = engine.getSStudentsNotFoundInP().stream()
+				.filter(student -> student.school.equals(normalizedSchool))
+				.count();
+			if (numSStudentsNotFoundInP <= 0) {
+				return;
 			}
-			createSNotInPSheet(workbook, normalizedSchool);
-			createPNotInSSheet(workbook, normalizedSchool);
+		}
 
-			try (OutputStream os = new FileOutputStream(getReportFile(normalizedSchool))) {
-				workbook.write(os);
+		if (normalizedSchool == null) {
+			try (Workbook workbook = new XSSFWorkbook(XSSFWorkbookType.XLSX)) {
+				createMatchesSheet(workbook);
+				createSNotInPSheet(workbook, normalizedSchool);
+				createPNotInSSheet(workbook, normalizedSchool);
+
+				try (OutputStream os = new FileOutputStream(getReportFile(normalizedSchool))) {
+					workbook.write(os);
+				}
+			} catch (IOException ex) {
+				throw new UncheckedIOException(ex);
 			}
-		} catch (IOException ex) {
-			throw new UncheckedIOException(ex);
+		} else {
+			createSheetForStudentsInOnlyOneSystem(normalizedSchool);
 		}
 	}
 
@@ -225,13 +246,60 @@ public class ReportBuilder {
 
 	private void createSNotInPSheet(Workbook workbook, String school) {
 		Sheet sheet = workbook.createSheet(S_NOT_P_SHEET_TITLE);
-		setHeadings(sheet, "School", "Team Name", "Team Number", "Last Name",
-			"First Name", "Nickname", "Grade");
+		setHeadings(sheet, HEADINGS_FOR_STUDENTS_IN_ONLY_ONE_SYSTEM);
 		engine.getSStudentsNotFoundInP().stream()
 			.filter(student -> (school == null || student.school.equals(school)))
 			.forEach(student -> createStudentRow(sheet, student));
 		sheet.createFreezePane(0, 1);
 		autoSizeColumns(sheet);
+	}
+
+	private void createPNotInSSheet(Workbook workbook, String school) {
+		Sheet sheet = workbook.createSheet(P_NOT_S_SHEET_TITLE);
+		setHeadings(sheet, HEADINGS_FOR_STUDENTS_IN_ONLY_ONE_SYSTEM);
+		engine.getPStudentsNotFoundInS().stream()
+			.filter(student -> (school == null || student.school.equals(school)))
+			.forEach(student -> createStudentRow(sheet, student));
+		sheet.createFreezePane(0, 1);
+		autoSizeColumns(sheet);
+	}
+
+	private void createSheetForStudentsInOnlyOneSystem(String school) {
+		try (CSVPrinter printer = FORMAT.print(getReportFile(school), App.CHARSET)) {
+			createSectionRow(printer, "Scilympiad Students with no Permission in the Portal:");
+			engine.getSStudentsNotFoundInP().stream()
+				.filter(student -> (school == null || student.school.equals(school)))
+				.forEach(student -> createStudentRow(printer, student));
+
+			createSectionRow(printer, "Portal Students that do not appear in Scilympiad:");
+			engine.getPStudentsNotFoundInS().stream()
+				.filter(student -> (school == null || student.school.equals(school)))
+				.forEach(student -> createStudentRow(printer, student));
+		} catch (IOException ex) {
+			throw new UncheckedIOException(ex);
+		}
+	}
+
+	private void createSectionRow(CSVPrinter printer, String sectionTitle) throws IOException {
+		printer.println();
+		printer.print(sectionTitle);
+		printer.println();
+		printer.println();
+	}
+
+	private void createStudentRow(CSVPrinter printer, ScilympiadStudent student) {
+		try {
+			printer.print(student.school);
+			printer.print(student.teamName);
+			printer.print(student.teamNumber.toUpperCase());
+			printer.print(student.lastName);
+			printer.print(student.firstName);
+			printer.print("");
+			printer.print(Integer.toString(student.grade));
+			printer.println();
+		} catch (IOException ex) {
+			throw new UncheckedIOException(ex);
+		}
 	}
 
 	private void createStudentRow(Sheet sheet, ScilympiadStudent student) {
@@ -251,15 +319,19 @@ public class ReportBuilder {
 			.setCellValue(student.grade);
 	}
 
-	private void createPNotInSSheet(Workbook workbook, String school) {
-		Sheet sheet = workbook.createSheet(P_NOT_S_SHEET_TITLE);
-		setHeadings(sheet, "School", "Team Name", "Team Number", "Last Name",
-			"First Name", "Nickname", "Grade");
-		engine.getPStudentsNotFoundInS().stream()
-			.filter(student -> (school == null || student.school.equals(school)))
-			.forEach(student -> createStudentRow(sheet, student));
-		sheet.createFreezePane(0, 1);
-		autoSizeColumns(sheet);
+	private void createStudentRow(CSVPrinter printer, PortalStudent student) {
+		try {
+			printer.print(student.school);
+			printer.print("");
+			printer.print("");
+			printer.print(student.lastName);
+			printer.print(student.firstName);
+			printer.print(student.nickName);
+			printer.print(Integer.toString(student.grade));
+			printer.println();
+		} catch (IOException ex) {
+			throw new UncheckedIOException(ex);
+		}
 	}
 
 	private void createStudentRow(Sheet sheet, PortalStudent student) {
@@ -323,7 +395,7 @@ public class ReportBuilder {
 				.filter(ch -> ch != '.')
 				.map(ch -> (ch == ' ') ? '-' : ch)
 				.forEach(ch -> buffer.append((char) ch));
-			return new File(reportDir, String.format("%1$s.xlsx", buffer));
+			return new File(reportDir, String.format("%1$s.csv", buffer));
 		}
 	}
 }
