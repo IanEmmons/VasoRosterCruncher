@@ -31,7 +31,6 @@ public class DifferenceEngine {
 
 	private DifferenceEngine(List<Match> manualMatches, List<PortalStudent> pStudentList,
 			List<ScilympiadStudent> sStudentList) {
-		// Write out SAME and DIFFERENT matches (but not exact matches) in the master report
 		pStudents = new TreeSet<>(pStudentList);
 		sStudents = new TreeSet<>(sStudentList);
 

@@ -62,7 +62,6 @@ public class App {
 	}
 
 	private void run() throws IOException, InvalidFormatException, ParseException {
-		@SuppressWarnings("unused")
 		List<School> schools = School.parse(coachesFile);
 		List<Match> matches = Match.parse(masterReportFile);
 		List<PortalStudent> pStudents = PortalStudent.parse(portalFile);
@@ -91,9 +90,11 @@ public class App {
 		System.out.format("Scilympiad students not in the Portal: %1$3d%n",
 			engine.getSStudentsNotFoundInP().size());
 
-		File reportDir = getReportDir();
-		ReportBuilder.newReport(engine, masterReportFile, reportDir, null);
-		ReportBuilder.newReport(engine, masterReportFile, reportDir, "marshall hs");
+		Stopwatch timer = new Stopwatch();
+		ReportBuilder rb = new ReportBuilder(engine, masterReportFile, getReportDir());
+		rb.createReport(null);
+		schools.stream().forEach(school -> rb.createReport(school.name));
+		timer.stopAndReport("Built reports");
 	}
 
 	private static File getReportDir() {

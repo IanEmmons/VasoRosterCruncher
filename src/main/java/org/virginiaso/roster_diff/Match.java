@@ -98,7 +98,7 @@ public class Match {
 				}
 			}
 
-			timer.stopAndReport("Parsed Scilympiad student file");
+			timer.stopAndReport("Parsed master report");
 			return result;
 		}
 	}

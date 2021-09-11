@@ -4,13 +4,14 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.UncheckedIOException;
 import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.TreeMap;
 
-import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.CellType;
@@ -45,43 +46,49 @@ public class ReportBuilder {
 	private final DifferenceEngine engine;
 	private final File masterReportFile;
 	private final File reportDir;
-	private final String school;
 
-	public static void newReport(DifferenceEngine engine, File masterReportFile,
-			File reportDir, String school) throws InvalidFormatException, IOException {
-		ReportBuilder builder = new ReportBuilder(engine, masterReportFile, reportDir, school);
-		builder.createReport();
-	}
-
-	private ReportBuilder(DifferenceEngine engine, File masterReportFile, File reportDir,
-			String school) {
+	public ReportBuilder(DifferenceEngine engine, File masterReportFile, File reportDir) {
 		this.engine = Objects.requireNonNull(engine, "engine");
 		this.masterReportFile = Objects.requireNonNull(masterReportFile, "masterReportFile");
 		this.reportDir = Objects.requireNonNull(reportDir, "reportDir");
-		this.school = (school == null || school.trim().isEmpty())
-			? null
-			: School.normalize(school);
 	}
 
-	private void createReport() throws InvalidFormatException, IOException {
-		Stopwatch timer = new Stopwatch();
+	public void createReport(String school) {
+		String normalizedSchool = (school == null || school.trim().isEmpty())
+			? null
+			: School.normalize(school);
 
 		try (Workbook workbook = new XSSFWorkbook(XSSFWorkbookType.XLSX)) {
-			if (school == null) {
+			if (normalizedSchool == null) {
 				createMatchesSheet(workbook);
 			}
-			createSNotInPSheet(workbook);
-			createPNotInSSheet(workbook);
+			createSNotInPSheet(workbook, normalizedSchool);
+			createPNotInSSheet(workbook, normalizedSchool);
 
-			try (OutputStream os = new FileOutputStream(getReportFile())) {
+			try (OutputStream os = new FileOutputStream(getReportFile(normalizedSchool))) {
 				workbook.write(os);
 			}
+		} catch (IOException ex) {
+			throw new UncheckedIOException(ex);
 		}
-
-		timer.stopAndReport("Built report for %1$s", school);
 	}
 
 	private void createMatchesSheet(Workbook workbook) {
+		/*
+		 * First, we create a new matches data structure that combines the near-matches
+		 * found by the difference engine with the manually adjudicated matches from the
+		 * master report.
+		 */
+		Map<ScilympiadStudent, Map<Integer, List<PortalStudent>>> matchesForDisplay
+			= new TreeMap<>();
+		matchesForDisplay.putAll(engine.getResults());
+		engine.getMatches().stream()
+			.filter(match -> match.getVerdict() != Verdict.EXACT_MATCH)
+			.forEach(match -> matchesForDisplay
+				.computeIfAbsent(match.getSStudent(), key -> new TreeMap<>())
+				.computeIfAbsent(match.getVerdict().getCorrespondingDistance(), key -> new ArrayList<>())
+				.add(match.getPStudent()));
+
 		EnumMap<Style, CellStyle> styles = createMatchesSheetStyles(workbook);
 
 		Sheet sheet = workbook.createSheet(MATCHES_SHEET_TITLE);
@@ -89,14 +96,12 @@ public class ReportBuilder {
 			"Last Name", "First Name", "Nickname", "Grade", "Verdict");
 		boolean isEvenSStudentIndex = false;
 		List<Integer> portalRowNumbers = new ArrayList<>();
-		for (var entry : engine.getResults().entrySet()) {
+		for (var entry : matchesForDisplay.entrySet()) {
 			ScilympiadStudent sStudent = entry.getKey();
 			Map<Integer, List<PortalStudent>> matches = entry.getValue();
-			if (school == null || school.equals(sStudent.school)) {
-				createNearMatchRowScilympiad(sheet, sStudent, matches, styles,
-					isEvenSStudentIndex, portalRowNumbers);
-				isEvenSStudentIndex = !isEvenSStudentIndex;
-			}
+			createNearMatchRowScilympiad(sheet, sStudent, matches, styles,
+				isEvenSStudentIndex, portalRowNumbers);
+			isEvenSStudentIndex = !isEvenSStudentIndex;
 		}
 		setValidation(sheet, portalRowNumbers);
 		sheet.createFreezePane(0, 1);
@@ -171,8 +176,12 @@ public class ReportBuilder {
 		portalRowNumbers.add(row.getRowNum());
 		createNextCell(row, CellType.STRING, firstStyle)
 			.setCellValue(PORTAL_ROW_LABEL);
-		createNextCell(row, CellType.NUMERIC, subsequentStyle)
-			.setCellValue(distance);
+		if (distance < 0) {
+			createNextCell(row, CellType.BLANK, subsequentStyle);
+		} else {
+			createNextCell(row, CellType.NUMERIC, subsequentStyle)
+				.setCellValue(distance);
+		}
 		createNextCell(row, CellType.STRING, subsequentStyle)
 			.setCellValue(pStudent.school);
 		createNextCell(row, CellType.BLANK, subsequentStyle);
@@ -185,8 +194,16 @@ public class ReportBuilder {
 			.setCellValue(pStudent.nickName);
 		createNextCell(row, CellType.NUMERIC, subsequentStyle)
 			.setCellValue(pStudent.grade);
-		createNextCell(row, CellType.STRING, subsequentStyle)
-			.setCellValue(VERDICT_COLUMN_VALUES[0]);
+		if (distance == Verdict.SAME.getCorrespondingDistance()) {
+			createNextCell(row, CellType.STRING, subsequentStyle)
+				.setCellValue(VERDICT_COLUMN_VALUES[2]);
+		} else if (distance == Verdict.DIFFERENT.getCorrespondingDistance()) {
+			createNextCell(row, CellType.STRING, subsequentStyle)
+				.setCellValue(VERDICT_COLUMN_VALUES[1]);
+		} else {
+			createNextCell(row, CellType.STRING, subsequentStyle)
+				.setCellValue(VERDICT_COLUMN_VALUES[0]);
+		}
 	}
 
 	private void setValidation(Sheet sheet, List<Integer> portalRowNumbers) {
@@ -206,7 +223,7 @@ public class ReportBuilder {
 		sheet.addValidationData(validation);
 	}
 
-	private void createSNotInPSheet(Workbook workbook) {
+	private void createSNotInPSheet(Workbook workbook, String school) {
 		Sheet sheet = workbook.createSheet(S_NOT_P_SHEET_TITLE);
 		setHeadings(sheet, "School", "Team Name", "Team Number", "Last Name",
 			"First Name", "Nickname", "Grade");
@@ -234,7 +251,7 @@ public class ReportBuilder {
 			.setCellValue(student.grade);
 	}
 
-	private void createPNotInSSheet(Workbook workbook) {
+	private void createPNotInSSheet(Workbook workbook, String school) {
 		Sheet sheet = workbook.createSheet(P_NOT_S_SHEET_TITLE);
 		setHeadings(sheet, "School", "Team Name", "Team Number", "Last Name",
 			"First Name", "Nickname", "Grade");
@@ -296,12 +313,17 @@ public class ReportBuilder {
 		}
 	}
 
-	private File getReportFile() {
+	private File getReportFile(String school) {
 		if (school == null) {
 			return masterReportFile;
 		} else {
 			reportDir.mkdirs();
-			return new File(reportDir, String.format("%1$s.xlsx", school));
+			StringBuilder buffer = new StringBuilder();
+			school.chars()
+				.filter(ch -> ch != '.')
+				.map(ch -> (ch == ' ') ? '-' : ch)
+				.forEach(ch -> buffer.append((char) ch));
+			return new File(reportDir, String.format("%1$s.xlsx", buffer));
 		}
 	}
 }

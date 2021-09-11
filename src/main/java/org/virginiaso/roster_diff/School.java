@@ -73,7 +73,7 @@ public class School {
 				.map(School::new)
 				.collect(Collectors.toUnmodifiableList());
 		}
-		timer.stopAndReport("Parsed portal student file");
+		timer.stopAndReport("Parsed coaches file");
 		return result;
 	}
 

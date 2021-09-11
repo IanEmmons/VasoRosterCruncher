@@ -3,9 +3,19 @@ package org.virginiaso.roster_diff;
 import java.util.stream.Stream;
 
 public enum Verdict {
-	DIFFERENT,
-	SAME,
-	EXACT_MATCH;
+	DIFFERENT(-1),
+	SAME(-2),
+	EXACT_MATCH(0);
+
+	private final int correspondingDistance;
+
+	private Verdict(int correspondingDistance) {
+		this.correspondingDistance = correspondingDistance;
+	}
+
+	public int getCorrespondingDistance() {
+		return correspondingDistance;
+	}
 
 	public static Verdict fromMasterReport(String masterReportVerdict) {
 		String verdictToSearchFor = (masterReportVerdict == null)
