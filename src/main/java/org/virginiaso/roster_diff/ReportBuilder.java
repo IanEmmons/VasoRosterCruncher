@@ -53,44 +53,44 @@ public class ReportBuilder {
 		WHITE_VERDICT_COLUMN, GRAY_VERDICT_COLUMN
 	}
 
+	private final Emailer emailer;
 	private final DifferenceEngine engine;
-	private final File masterReportFile;
+	private final File masterReport;
 	private final File reportDir;
 
-	public ReportBuilder(DifferenceEngine engine, File masterReportFile, File reportDir) {
+	public ReportBuilder(DifferenceEngine engine, File masterReport, File reportDir)
+			throws IOException {
+		emailer = new Emailer();
 		this.engine = Objects.requireNonNull(engine, "engine");
-		this.masterReportFile = Objects.requireNonNull(masterReportFile, "masterReportFile");
+		this.masterReport = Objects.requireNonNull(masterReport, "masterReportFile");
 		this.reportDir = Objects.requireNonNull(reportDir, "reportDir");
 	}
 
-	public void createReport(String school) {
-		String normalizedSchool = (school == null || school.trim().isEmpty())
-			? null
-			: School.normalize(school);
-
-		if (normalizedSchool != null) {
-			long numSStudentsNotFoundInP = engine.getSStudentsNotFoundInP().stream()
-				.filter(student -> student.school.equals(normalizedSchool))
-				.count();
-			if (numSStudentsNotFoundInP <= 0) {
-				return;
-			}
-		}
-
-		if (normalizedSchool == null) {
+	public void createReport(School school, boolean sendEmail) {
+		if (school == null) {
 			try (Workbook workbook = new XSSFWorkbook(XSSFWorkbookType.XLSX)) {
 				createMatchesSheet(workbook);
-				createSNotInPSheet(workbook, normalizedSchool);
-				createPNotInSSheet(workbook, normalizedSchool);
+				createSNotInPSheet(workbook, school);
+				createPNotInSSheet(workbook, school);
 
-				try (OutputStream os = new FileOutputStream(getReportFile(normalizedSchool))) {
+				try (OutputStream os = new FileOutputStream(getReportFile(school))) {
 					workbook.write(os);
 				}
 			} catch (IOException ex) {
 				throw new UncheckedIOException(ex);
 			}
 		} else {
-			createSheetForStudentsInOnlyOneSystem(normalizedSchool);
+			long numSStudentsNotFoundInP = engine.getSStudentsNotFoundInP().stream()
+				.filter(student -> student.school.equals(school.normalizedName))
+				.count();
+			if (numSStudentsNotFoundInP <= 0) {
+				return;
+			}
+
+			File report = createSchoolReport(school);
+			if (sendEmail) {
+				emailer.send(report, school.coachEmails, numSStudentsNotFoundInP);
+			}
 		}
 	}
 
@@ -244,37 +244,43 @@ public class ReportBuilder {
 		sheet.addValidationData(validation);
 	}
 
-	private void createSNotInPSheet(Workbook workbook, String school) {
+	private void createSNotInPSheet(Workbook workbook, School school) {
 		Sheet sheet = workbook.createSheet(S_NOT_P_SHEET_TITLE);
 		setHeadings(sheet, HEADINGS_FOR_STUDENTS_IN_ONLY_ONE_SYSTEM);
 		engine.getSStudentsNotFoundInP().stream()
-			.filter(student -> (school == null || student.school.equals(school)))
+			.filter(student -> (school == null || student.school.equals(school.normalizedName)))
 			.forEach(student -> createStudentRow(sheet, student));
 		sheet.createFreezePane(0, 1);
 		autoSizeColumns(sheet);
 	}
 
-	private void createPNotInSSheet(Workbook workbook, String school) {
+	private void createPNotInSSheet(Workbook workbook, School school) {
 		Sheet sheet = workbook.createSheet(P_NOT_S_SHEET_TITLE);
 		setHeadings(sheet, HEADINGS_FOR_STUDENTS_IN_ONLY_ONE_SYSTEM);
 		engine.getPStudentsNotFoundInS().stream()
-			.filter(student -> (school == null || student.school.equals(school)))
+			.filter(student -> (school == null || student.school.equals(school.normalizedName)))
 			.forEach(student -> createStudentRow(sheet, student));
 		sheet.createFreezePane(0, 1);
 		autoSizeColumns(sheet);
 	}
 
-	private void createSheetForStudentsInOnlyOneSystem(String school) {
-		try (CSVPrinter printer = FORMAT.print(getReportFile(school), App.CHARSET)) {
-			createSectionRow(printer, "Scilympiad Students with no Permission in the Portal:");
+	private File createSchoolReport(School school) {
+		File file = getReportFile(school);
+		try (CSVPrinter printer = FORMAT.print(file, App.CHARSET)) {
+			createSectionRow(printer,
+				"Scilympiad Students with no Permission in the Portal:");
 			engine.getSStudentsNotFoundInP().stream()
-				.filter(student -> (school == null || student.school.equals(school)))
+				.filter(student -> student.school.equals(school.normalizedName))
 				.forEach(student -> createStudentRow(printer, student));
 
-			createSectionRow(printer, "Portal Students that do not appear in Scilympiad:");
+			printer.println();
+			createSectionRow(printer,
+				"Portal Students that do not appear in Scilympiad (just FYI — no action required:");
 			engine.getPStudentsNotFoundInS().stream()
-				.filter(student -> (school == null || student.school.equals(school)))
+				.filter(student -> student.school.equals(school.normalizedName))
 				.forEach(student -> createStudentRow(printer, student));
+
+			return file;
 		} catch (IOException ex) {
 			throw new UncheckedIOException(ex);
 		}
@@ -385,13 +391,13 @@ public class ReportBuilder {
 		}
 	}
 
-	private File getReportFile(String school) {
+	private File getReportFile(School school) {
 		if (school == null) {
-			return masterReportFile;
+			return masterReport;
 		} else {
 			reportDir.mkdirs();
 			StringBuilder buffer = new StringBuilder();
-			school.chars()
+			school.normalizedName.chars()
 				.filter(ch -> ch != '.')
 				.map(ch -> (ch == ' ') ? '-' : ch)
 				.forEach(ch -> buffer.append((char) ch));

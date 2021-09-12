@@ -1,0 +1,10 @@
+While scanning your school's team rosters in Scilympiad, VASO has discovered
+that %1$d of those students do not have a matching permission form in the
+VASO Portal.  Please request that the parents of these students submit the
+required permission from in the VASO Portal to avoid having these students
+barred from competition.
+
+Thank you,
+
+VASO registration coordinator
+

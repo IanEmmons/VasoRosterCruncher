@@ -8,8 +8,6 @@ import java.util.EnumMap;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
-
 public class App {
 	public static final Charset CHARSET = StandardCharsets.UTF_8;
 
@@ -65,7 +63,7 @@ public class App {
 		return result;
 	}
 
-	private void run() throws IOException, InvalidFormatException, ParseException {
+	private void run() throws IOException, ParseException {
 		List<School> schools = School.parse(coachesFile);
 		List<Match> matches = Match.parse(masterReportFile);
 		List<PortalStudent> pStudents = PortalStudent.parse(portalFile);
@@ -94,11 +92,17 @@ public class App {
 		System.out.format("Scilympiad students not in the Portal: %1$3d%n",
 			engine.getSStudentsNotFoundInP().size());
 
-		Stopwatch timer = new Stopwatch();
+		Stopwatch masterReportTimer = new Stopwatch();
 		ReportBuilder rb = new ReportBuilder(engine, masterReportFile, getReportDir());
-		rb.createReport(null);
-		schools.stream().forEach(school -> rb.createReport(school.name));
-		timer.stopAndReport("Built reports");
+		rb.createReport(null, false);
+		masterReportTimer.stopAndReport("Built master report");
+
+		// TODO: Get this from configuration:
+		boolean sendEmail = false;
+
+		Stopwatch schoolReportTimer = new Stopwatch();
+		schools.stream().forEach(school -> rb.createReport(school, sendEmail));
+		schoolReportTimer.stopAndReport("Built school reports");
 	}
 
 	private static File getReportDir() {

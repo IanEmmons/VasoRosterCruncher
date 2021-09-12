@@ -1,7 +1,12 @@
 package org.virginiaso.roster_diff;
 
+import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.io.UncheckedIOException;
 import java.util.MissingResourceException;
+import java.util.Properties;
 import java.util.regex.Pattern;
 
 public class Util {
@@ -20,5 +25,18 @@ public class Util {
 			throw new MissingResourceException(null, null, resourceName);
 		}
 		return result;
+	}
+
+	public static Properties loadPropertiesFromResource(String resourceName) {
+		try (
+			InputStream is = Util.getResourceAsInputStream(resourceName);
+			Reader rdr = new InputStreamReader(is, App.CHARSET);
+		) {
+			Properties props = new Properties();
+			props.load(rdr);
+			return props;
+		} catch (IOException ex) {
+			throw new UncheckedIOException(ex);
+		}
 	}
 }
