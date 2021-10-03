@@ -1,0 +1,32 @@
+curl --anyauth --user 'statedirector@virginiaso.org:ynXVGhruXz7%83qK' --location --get 'https://scilympiad.com/va/Tour/XpStudents'
+
+
+
+
+/va/Account/Login
+__RequestVerificationToken=nr2asB3NQysea63N3gq63u44PA7_BjhbgOitv32AWmHArSDlUL_gP0dMq8nlfLX5N_7_cV74Gl14XdDLASxj_6XA1W9y8ORY3F2z8puSwDQ1
+Email=
+Password=
+RememberMe=true
+
+
+
+============================================
+
+https://virginiaso.knack.com/vaso-div-a-fall-2021#csv
+https://virginiaso.knack.com/vaso-div-a-fall-2021#json
+
+
+
+Scene 503
+View 1151
+X-Knack-Application-Id=610fafaacc0a45001e8a4507
+
+curl -H "Content-Type: application/json" --data '{"email":"ian@emmons.mobi","password":"/Gt8KF#Q3,>96PJR"}' "https://api.knack.com/v1/applications/610fafaacc0a45001e8a4507/session"
+
+curl -H "Accept: application/json" -H "X-Knack-Application-Id: 610fafaacc0a45001e8a4507" -H "Authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiNjEwZmFmYWU3ZmVkOWYwZTQ5MGM5NjBjIiwiYXBwbGljYXRpb25faWQiOiI2MTBmYWZhYWNjMGE0NTAwMWU4YTQ1MDciLCJpYXQiOjE2MzE0OTUzODF9.DiV0HTJjfOk_s8pXqs5zl9i01zkaiVHmmAHD5PdbkfE" 'https://api.knack.com/v1/pages/scene_503/views/view_1151/records?format=raw&sort_field=field_52&sort_order=asc&page=1&rows_per_page=100'
+
+
+
+
+text/csv

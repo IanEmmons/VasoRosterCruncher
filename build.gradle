@@ -15,9 +15,11 @@ dependencies {
 	implementation 'org.apache.commons:commons-csv:1.9.0'
 	implementation 'org.apache.commons:commons-lang3:3.12.0'
 	implementation 'org.apache.commons:commons-text:1.9'
+	implementation 'com.google.code.gson:gson:2.8.8'
 	implementation 'javax.mail:javax.mail-api:1.6.2'
 	implementation 'com.sun.mail:javax.mail:1.6.2'
 	implementation 'org.apache.poi:poi-ooxml:5.0.0'
+	implementation 'org.jsoup:jsoup:1.14.2'
 
 	testImplementation 'org.junit.jupiter:junit-jupiter:5.7.2'
 }
@@ -26,8 +28,33 @@ application {
 	mainClass = 'org.virginiaso.roster_diff.App'
 }
 
-task(sendEmail, dependsOn: 'classes', type: JavaExec) {
+task diffRosters(type: JavaExec) {
+	dependsOn 'classes'
+	mainClass = 'org.virginiaso.roster_diff.App'
+	classpath = sourceSets.main.runtimeClasspath
+	args = [
+		"$projectDir/coaches.csv",
+		"$projectDir/master-report.xlsx",
+		"$projectDir/src/test/resources/portal-students-c.csv",
+		"$projectDir/src/test/resources/scilympiad-students-c.xlsx",
+	]
+}
+
+task sendEmail(type: JavaExec) {
+	dependsOn 'classes'
 	mainClass = 'org.virginiaso.roster_diff.SendEmail'
+	classpath = sourceSets.main.runtimeClasspath
+}
+
+task getPortalReport(type: JavaExec) {
+	dependsOn 'classes'
+	mainClass = 'org.virginiaso.roster_diff.PortalRetriever'
+	classpath = sourceSets.main.runtimeClasspath
+}
+
+task getScilympiadReport(type: JavaExec) {
+	dependsOn 'classes'
+	mainClass = 'org.virginiaso.roster_diff.ScilympiadRetriever'
 	classpath = sourceSets.main.runtimeClasspath
 }
 

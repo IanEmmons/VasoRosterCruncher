@@ -1,0 +1,242 @@
+{
+  "session": {
+    "user": {
+      "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiNjEwZmFmYWU3ZmVkOWYwZTQ5MGM5NjBjIiwiYXBwbGljYXRpb25faWQiOiI2MTBmYWZhYWNjMGE0NTAwMWU4YTQ1MDciLCJpYXQiOjE2MzE1MDI4NTB9.wImC9Q5hfjU-NtQPUTbIneI6sriDDwkUkYf8bE-qkUo"
+    }
+  }
+}
+
+
+
+{
+  "total_pages": 1,
+  "current_page": 1,
+  "total_records": 15,
+  "records": [
+    {
+      "id": "613aa83f8aaf65001f85132a",
+      "field_52": {
+        "first": "Kara",
+        "last": "Carpenter"
+      },
+      "field_70": "",
+      "field_56": [
+        {
+          "id": "610fafae7fed9f0e490c9682",
+          "identifier": "Jamestown ES"
+        }
+      ],
+      "field_90": 4
+    },
+    {
+      "id": "613e9796e640f700246aaba8",
+      "field_52": {
+        "first": "Victoria",
+        "last": "Carter"
+      },
+      "field_70": "",
+      "field_56": [
+        {
+          "id": "610fafae7fed9f0e490c9682",
+          "identifier": "Jamestown ES"
+        }
+      ],
+      "field_90": 3
+    },
+    {
+      "id": "613a1103dd964d001e9d41f3",
+      "field_52": {
+        "first": "Nicholas",
+        "last": "Cassels"
+      },
+      "field_70": "Nick",
+      "field_56": [
+        {
+          "id": "610fafae7fed9f0e490c9682",
+          "identifier": "Jamestown ES"
+        }
+      ],
+      "field_90": 4
+    },
+    {
+      "id": "613be6a62220fb001e1b22dd",
+      "field_52": {
+        "first": "Molly",
+        "last": "Coleman"
+      },
+      "field_70": "",
+      "field_56": [
+        {
+          "id": "610fafae7fed9f0e490c9682",
+          "identifier": "Jamestown ES"
+        }
+      ],
+      "field_90": 4
+    },
+    {
+      "id": "613e5618e640f700246a338d",
+      "field_52": {
+        "first": "Clara",
+        "last": "Deich"
+      },
+      "field_70": "",
+      "field_56": [
+        {
+          "id": "610fafae7fed9f0e490c9682",
+          "identifier": "Jamestown ES"
+        }
+      ],
+      "field_90": 3
+    },
+    {
+      "id": "613a0e92fd5404001f31581e",
+      "field_52": {
+        "first": "Charlotte",
+        "last": "Donachie"
+      },
+      "field_70": "",
+      "field_56": [
+        {
+          "id": "610fafae7fed9f0e490c9682",
+          "identifier": "Jamestown ES"
+        }
+      ],
+      "field_90": 4
+    },
+    {
+      "id": "61391bc3dd9dae001e1cc9fd",
+      "field_52": {
+        "first": "Tyler",
+        "last": "Duan"
+      },
+      "field_70": "",
+      "field_56": [
+        {
+          "id": "610fafaf7fed9f0e490c96be",
+          "identifier": "BASIS Independent McLean"
+        }
+      ],
+      "field_90": 5
+    },
+    {
+      "id": "613a1d5fd064210020f2c61b",
+      "field_52": {
+        "first": "Audrey ",
+        "last": "Frizzell "
+      },
+      "field_70": "",
+      "field_56": [
+        {
+          "id": "610fafae7fed9f0e490c9682",
+          "identifier": "Jamestown ES"
+        }
+      ],
+      "field_90": 4
+    },
+    {
+      "id": "613b6490c36fc3001ee54df3",
+      "field_52": {
+        "first": "Tyler",
+        "last": "Holleman "
+      },
+      "field_70": "",
+      "field_56": [
+        {
+          "id": "610fafae7fed9f0e490c9682",
+          "identifier": "Jamestown ES"
+        }
+      ],
+      "field_90": 3
+    },
+    {
+      "id": "6136bf5553525c001efdcdaf",
+      "field_52": {
+        "first": "Ani",
+        "last": "Nishanian"
+      },
+      "field_70": "Ani",
+      "field_56": [
+        {
+          "id": "610fafae7fed9f0e490c968a",
+          "identifier": "Willow Springs ES"
+        }
+      ],
+      "field_90": 5
+    },
+    {
+      "id": "613e2d218c7990001ecb957f",
+      "field_52": {
+        "first": "Alex",
+        "last": "Nutter"
+      },
+      "field_70": "",
+      "field_56": [
+        {
+          "id": "610fafae7fed9f0e490c9682",
+          "identifier": "Jamestown ES"
+        }
+      ],
+      "field_90": 3
+    },
+    {
+      "id": "613e2ced4255c4001ecce1ec",
+      "field_52": {
+        "first": "Avery",
+        "last": "Nutter"
+      },
+      "field_70": "",
+      "field_56": [
+        {
+          "id": "610fafae7fed9f0e490c9682",
+          "identifier": "Jamestown ES"
+        }
+      ],
+      "field_90": 4
+    },
+    {
+      "id": "613e6ba2a78f58001e9136b0",
+      "field_52": {
+        "first": "Kira",
+        "last": "Olcott"
+      },
+      "field_70": "",
+      "field_56": [
+        {
+          "id": "610fafae7fed9f0e490c9682",
+          "identifier": "Jamestown ES"
+        }
+      ],
+      "field_90": 3
+    },
+    {
+      "id": "613a3b95c1081f001ff33d53",
+      "field_52": {
+        "first": "Connor",
+        "last": "Scholz"
+      },
+      "field_70": "",
+      "field_56": [
+        {
+          "id": "610fafae7fed9f0e490c9682",
+          "identifier": "Jamestown ES"
+        }
+      ],
+      "field_90": 4
+    },
+    {
+      "id": "613a1373090dc8001ed513d1",
+      "field_52": {
+        "first": "Maxwell",
+        "last": "Sorensen"
+      },
+      "field_70": "Max",
+      "field_56": [
+        {
+          "id": "610fafae7fed9f0e490c9682",
+          "identifier": "Jamestown ES"
+        }
+      ],
+      "field_90": 5
+    }
+  ]
+}

@@ -4,8 +4,5 @@
 .settings/
 bin/
 build/
-coaches.csv
 master-report.xlsx
-pstudents.csv
-sstudents.xlsx
 ~$*.xlsx
