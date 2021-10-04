@@ -46,13 +46,13 @@ task sendEmail(type: JavaExec) {
 	classpath = sourceSets.main.runtimeClasspath
 }
 
-task getPortalReport(type: JavaExec) {
+task getPortalRoster(type: JavaExec) {
 	dependsOn 'classes'
 	mainClass = 'org.virginiaso.roster_diff.PortalRetriever'
 	classpath = sourceSets.main.runtimeClasspath
 }
 
-task getScilympiadReport(type: JavaExec) {
+task getScilympiadRoster(type: JavaExec) {
 	dependsOn 'classes'
 	mainClass = 'org.virginiaso.roster_diff.ScilympiadRetriever'
 	classpath = sourceSets.main.runtimeClasspath

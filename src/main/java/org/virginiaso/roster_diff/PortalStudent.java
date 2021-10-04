@@ -41,7 +41,7 @@ public class PortalStudent implements Comparable<PortalStudent> {
 	public static List<PortalStudent> parse(InputStream portalStudentStream) throws IOException {
 		Stopwatch timer = new Stopwatch();
 		List<PortalStudent> result;
-		try (CSVParser parser = CSVParser.parse(portalStudentStream, App.CHARSET, FORMAT)) {
+		try (CSVParser parser = CSVParser.parse(portalStudentStream, Util.CHARSET, FORMAT)) {
 			result = parser.stream()
 				.map(PortalStudent::new)
 				.collect(Collectors.toUnmodifiableList());

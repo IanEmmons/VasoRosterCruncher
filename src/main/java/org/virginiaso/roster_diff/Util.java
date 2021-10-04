@@ -5,11 +5,14 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.UncheckedIOException;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.MissingResourceException;
 import java.util.Properties;
 import java.util.regex.Pattern;
 
 public class Util {
+	public static final Charset CHARSET = StandardCharsets.UTF_8;
 	private static final Pattern WHITESPACE = Pattern.compile("\\s\\s+");
 
 	private Util() {}	// prevent instantiation
@@ -27,10 +30,16 @@ public class Util {
 		return result;
 	}
 
+	public static String getResourceAsString(String resourceName) throws IOException {
+		try (InputStream is = Util.getResourceAsInputStream(resourceName)) {
+			return new String(is.readAllBytes(), CHARSET);
+		}
+	}
+
 	public static Properties loadPropertiesFromResource(String resourceName) {
 		try (
 			InputStream is = Util.getResourceAsInputStream(resourceName);
-			Reader rdr = new InputStreamReader(is, App.CHARSET);
+			Reader rdr = new InputStreamReader(is, CHARSET);
 		) {
 			Properties props = new Properties();
 			props.load(rdr);

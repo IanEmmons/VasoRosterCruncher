@@ -2,8 +2,6 @@ package org.virginiaso.roster_diff;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Properties;
 
@@ -30,9 +28,7 @@ public class Emailer {
 
 	public Emailer() throws IOException {
 		props = Util.loadPropertiesFromResource(PROPERTIES_RESOURCE);
-		try (InputStream is = Util.getResourceAsInputStream(EMAIL_BODY_RESOURCE)) {
-			emailBody = new String(is.readAllBytes(), StandardCharsets.UTF_8);
-		}
+		emailBody = Util.getResourceAsString(EMAIL_BODY_RESOURCE);
 	}
 
 	public void send(File attachment, List<String> recipients, long numSStudentsNotFoundInP) {

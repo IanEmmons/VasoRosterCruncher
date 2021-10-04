@@ -31,7 +31,7 @@ public class School {
 	static {
 		try (
 			InputStream is = Util.getResourceAsInputStream(TRANSLATION_RESOURCE);
-			CSVParser parser = CSVParser.parse(is, App.CHARSET, FORMAT);
+			CSVParser parser = CSVParser.parse(is, Util.CHARSET, FORMAT);
 		) {
 			TRANSLATIONS = parser.stream()
 				.map(record -> Pair.of(record.get("From").toLowerCase(), record.get("To").toLowerCase()))
@@ -65,7 +65,7 @@ public class School {
 	public static List<School> parse(InputStream coachesStream) throws IOException {
 		Stopwatch timer = new Stopwatch();
 		List<School> result;
-		try (CSVParser parser = CSVParser.parse(coachesStream, App.CHARSET, FORMAT)) {
+		try (CSVParser parser = CSVParser.parse(coachesStream, Util.CHARSET, FORMAT)) {
 			result = parser.stream()
 				.map(School::new)
 				.collect(Collectors.toUnmodifiableList());

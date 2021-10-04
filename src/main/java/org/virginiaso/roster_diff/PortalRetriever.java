@@ -18,8 +18,17 @@ import java.net.http.HttpRequest.BodyPublishers;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.FileVisitOption;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Properties;
+import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -104,20 +113,24 @@ public class PortalRetriever {
 		}
 	}
 
+	private static final String PROPERTIES_RESOURCE = "configuration.properties";
+	private static final String ROSTER_FILE_FMT = "portal-%1$tFT%1$tT.json";
+	private static final Pattern ROSTER_FILE_PATTERN = Pattern.compile("portal-.*\\.json");
 	private static final String JSON_MEDIA_TYPE = "application/json";
-	private static final String USER_NAME = "ian@emmons.mobi";
-	private static final String PASSWORD = "/Gt8KF#Q3,>96PJR";
-	private static final String APPLICATION_ID = "610fafaacc0a45001e8a4507";
 	private static final String TOKEN_URL = "https://api.knack.com/v1/applications/%1$s/session";
 	private static final String TOKEN_BODY = "{\"email\":\"%1$s\",\"password\":\"%2$s\"}";
 	private static final String REPORT_URL = "https://api.knack.com/v1/pages"
 		+ "/scene_%1$s/views/view_%2$s/records?format=raw&sort_field=%3$s"
 		+ "&sort_order=asc&page=%4$d&rows_per_page=%5$d";
-	private static final String SCENE = "503";
-	private static final String VIEW = "1151";
-	private static final String SORT_FIELD = "field_52";
-	private static final int PAGE_SIZE = 6;
+	private static final int PAGE_SIZE = 100;
 
+	private final File rosterDir;
+	private final String user;
+	private final String password;
+	private final String applicationId;
+	private final String scene;
+	private final String view;
+	private final String sortField;
 	private final HttpClient client;
 	private String userToken;
 	private int totalPages;
@@ -125,6 +138,15 @@ public class PortalRetriever {
 	private List<PortalStudent> students;
 
 	public PortalRetriever() {
+		Properties props = Util.loadPropertiesFromResource(PROPERTIES_RESOURCE);
+		rosterDir = new File(props.getProperty("portal.roster.dir"));
+		user = props.getProperty("portal.user");
+		password = props.getProperty("portal.password");
+		applicationId = props.getProperty("portal.application.id");
+		scene = props.getProperty("portal.scene");
+		view = props.getProperty("portal.view");
+		sortField = props.getProperty("portal.sort.field");
+
 		client = HttpClient.newHttpClient();
 		userToken = null;
 		totalPages = -1;
@@ -132,31 +154,48 @@ public class PortalRetriever {
 		students = new ArrayList<>();
 	}
 
-	public List<PortalStudent> getReport() throws IOException, InterruptedException {
+	public void saveRoster() throws IOException {
+		retrieveRoster();
+		File rosterFile = new File(rosterDir,
+			String.format(ROSTER_FILE_FMT, LocalDateTime.now()));
+		if (!rosterDir.exists()) {
+			rosterDir.mkdirs();
+		}
+		try (
+			OutputStream os = new FileOutputStream(rosterFile);
+			Writer wtr = new OutputStreamWriter(os, StandardCharsets.UTF_8);
+		) {
+			Gson gson = new GsonBuilder()
+				.registerTypeAdapter(PortalStudent.class, new PortalStudentHandler())
+				.create();
+			gson.toJson(new ReportResponse(students), ReportResponse.class, wtr);
+		}
+	}
+
+	private void retrieveRoster() throws IOException {
 		getUserToken();
 		System.out.format("Found usr token '%1$s'%n", userToken);
 		for (int currentPage = 1;; ++currentPage) {
-			String url = String.format(REPORT_URL, SCENE, VIEW, SORT_FIELD, currentPage, PAGE_SIZE);
+			String url = String.format(REPORT_URL, scene, view, sortField, currentPage, PAGE_SIZE);
 			HttpRequest request = HttpRequest.newBuilder(URI.create(url))
 				.GET()
 				.header("Accept", JSON_MEDIA_TYPE)
-				.header("X-Knack-Application-Id", APPLICATION_ID)
+				.header("X-Knack-Application-Id", applicationId)
 				.header("Authorization", userToken)
 				.build();
 			client.sendAsync(request, BodyHandlers.ofInputStream())
 				.thenApply(HttpResponse::body)
-				.thenAccept(this::readReportJson)
+				.thenAccept(this::readJsonReport)
 				.join();
 			if (lastPageRead >= totalPages) {
 				break;
 			}
 		}
-		return students;
 	}
 
-	private void getUserToken() throws IOException, InterruptedException {
-		String url = String.format(TOKEN_URL, APPLICATION_ID);
-		String requestBody = String.format(TOKEN_BODY, USER_NAME, PASSWORD);
+	private void getUserToken() throws IOException {
+		String url = String.format(TOKEN_URL, applicationId);
+		String requestBody = String.format(TOKEN_BODY, user, password);
 		HttpRequest request = HttpRequest.newBuilder(URI.create(url))
 			.POST(BodyPublishers.ofString(requestBody))
 			.header("Content-Type", JSON_MEDIA_TYPE)
@@ -174,7 +213,7 @@ public class PortalRetriever {
 			.get("token").getAsString();
 	}
 
-	private void readReportJson(InputStream is) {
+	private void readJsonReport(InputStream is) {
 		Reader rdr = new InputStreamReader(is, StandardCharsets.UTF_8);
 		Gson gson = new GsonBuilder()
 			.registerTypeAdapter(PortalStudent.class, new PortalStudentHandler())
@@ -185,9 +224,27 @@ public class PortalRetriever {
 		students.addAll(response.records);
 	}
 
-	public static List<PortalStudent> readReportFile(File reportFile) throws IOException {
+	private static boolean matcher(Path path, BasicFileAttributes attrs) {
+		return attrs.isRegularFile()
+			&& ROSTER_FILE_PATTERN.matcher(path.getFileName().toString()).matches();
+	}
+
+	public List<PortalStudent> readLatestRosterFile() throws IOException {
+		File rosterFile;
+		try (Stream<Path> stream = Files.find(rosterDir.toPath(), Integer.MAX_VALUE,
+			PortalRetriever::matcher, FileVisitOption.FOLLOW_LINKS)) {
+			rosterFile = stream
+				.max(Comparator.comparing(path -> path.getFileName().toString()))
+				.map(Path::toFile)
+				.orElse(null);
+		}
+
+		if (rosterFile == null) {
+			return List.of();
+		}
+
 		try (
-			InputStream os = new FileInputStream(reportFile);
+			InputStream os = new FileInputStream(rosterFile);
 			Reader rdr = new InputStreamReader(os, StandardCharsets.UTF_8);
 		) {
 			Gson gson = new GsonBuilder()
@@ -198,25 +255,14 @@ public class PortalRetriever {
 		}
 	}
 
-	private static void writeReportFile(File reportFile, List<PortalStudent> students) throws IOException {
-		try (
-			OutputStream os = new FileOutputStream(reportFile);
-			Writer wtr = new OutputStreamWriter(os, StandardCharsets.UTF_8);
-		) {
-			Gson gson = new GsonBuilder()
-				.registerTypeAdapter(PortalStudent.class, new PortalStudentHandler())
-				.create();
-			gson.toJson(new ReportResponse(students), ReportResponse.class, wtr);
-		}
-	}
-
 	public static void main(String [] args) {
 		try {
 			PortalRetriever retriever = new PortalRetriever();
-			List<PortalStudent> students = retriever.getReport();
+			retriever.saveRoster();
+			List<PortalStudent> students = retriever.readLatestRosterFile();
 			System.out.format("Found %1$d students:%n", students.size());
 			students.forEach(student -> System.out.format("   %1$s%n", student));
-		} catch (IOException | InterruptedException ex) {
+		} catch (IOException ex) {
 			ex.printStackTrace();
 		}
 	}

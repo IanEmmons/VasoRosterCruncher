@@ -266,7 +266,7 @@ public class ReportBuilder {
 
 	private File createSchoolReport(School school) {
 		File file = getReportFile(school);
-		try (CSVPrinter printer = FORMAT.print(file, App.CHARSET)) {
+		try (CSVPrinter printer = FORMAT.print(file, Util.CHARSET)) {
 			createSectionRow(printer,
 				"Scilympiad Students with no Permission in the Portal:");
 			engine.getSStudentsNotFoundInP().stream()

@@ -4,5 +4,7 @@
 .settings/
 bin/
 build/
+portal-rosters/
+scilympiad-rosters/
 master-report.xlsx
 ~$*.xlsx
