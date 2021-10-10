@@ -75,10 +75,10 @@ public class PortalStudent implements Comparable<PortalStudent> {
 	public boolean equals(Object obj) {
 		if (this == obj) {
 			return true;
-		} else if (!(obj instanceof PortalStudent other)) {
+		} else if (!(obj instanceof PortalStudent)) {
 			return false;
 		} else {
-			return this.compareTo(other) == 0;
+			return this.compareTo((PortalStudent) obj) == 0;
 		}
 	}
 

@@ -275,7 +275,7 @@ public class ReportBuilder {
 
 			printer.println();
 			createSectionRow(printer,
-				"Portal Students that do not appear in Scilympiad (just FYI — no action required:");
+				"Portal Students that do not appear in Scilympiad (just FYI - no action required:");
 			engine.getPStudentsNotFoundInS().stream()
 				.filter(student -> student.school.equals(school.normalizedName))
 				.forEach(student -> createStudentRow(printer, student));

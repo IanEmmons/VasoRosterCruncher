@@ -5,7 +5,7 @@ plugins {
 
 group = 'org.virginiaso'
 version = '0.0.1'
-sourceCompatibility = '16'
+sourceCompatibility = '11'
 
 repositories {
 	mavenCentral()
@@ -31,18 +31,6 @@ application {
 task diffRosters(type: JavaExec) {
 	dependsOn 'classes'
 	mainClass = 'org.virginiaso.roster_diff.App'
-	classpath = sourceSets.main.runtimeClasspath
-	args = [
-		"$projectDir/coaches.csv",
-		"$projectDir/master-report.xlsx",
-		"$projectDir/src/test/resources/portal-students-c.csv",
-		"$projectDir/src/test/resources/scilympiad-students-c.xlsx",
-	]
-}
-
-task sendEmail(type: JavaExec) {
-	dependsOn 'classes'
-	mainClass = 'org.virginiaso.roster_diff.SendEmail'
 	classpath = sourceSets.main.runtimeClasspath
 }
 

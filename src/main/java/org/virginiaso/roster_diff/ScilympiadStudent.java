@@ -168,10 +168,13 @@ public class ScilympiadStudent implements Comparable<ScilympiadStudent> {
 				fullName, rowNum);
 		}
 
-		String gradeNumStr = getMatchedPortion(grade, GRADE_PATTERN);
-		if (gradeNumStr == null) {
-			throw new ParseException("Grade '%1$s' in row %2$d is malformed", grade, rowNum);
+		if ("K".equalsIgnoreCase(grade)) {
+			this.grade = 0;
 		} else {
+			String gradeNumStr = getMatchedPortion(grade, GRADE_PATTERN);
+			if (gradeNumStr == null) {
+				throw new ParseException("Grade '%1$s' in row %2$d is malformed", grade, rowNum);
+			}
 			this.grade = Integer.parseInt(gradeNumStr);
 		}
 	}
@@ -203,10 +206,10 @@ public class ScilympiadStudent implements Comparable<ScilympiadStudent> {
 	public boolean equals(Object obj) {
 		if (this == obj) {
 			return true;
-		} else if (!(obj instanceof ScilympiadStudent other)) {
+		} else if (!(obj instanceof ScilympiadStudent)) {
 			return false;
 		} else {
-			return this.compareTo(other) == 0;
+			return this.compareTo((ScilympiadStudent) obj) == 0;
 		}
 	}
 

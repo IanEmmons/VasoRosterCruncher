@@ -5,11 +5,14 @@ import java.io.IOException;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Properties;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 public class App {
 	private final File scilympiadRosterDir;
 	private final File masterReportFile;
+	private final boolean sendReports;
 
 	public static void main(String[] args) {
 		try {
@@ -28,6 +31,7 @@ public class App {
 		Properties props = Util.loadPropertiesFromResource(Util.PROPERTIES_RESOURCE);
 		scilympiadRosterDir = parseFileArgument(props, "scilympiad.roster.dir");
 		masterReportFile = parseFileArgument(props, "master.report.file");
+		sendReports = Boolean.parseBoolean(props.getProperty("send.reports", "false"));
 	}
 
 	private static File parseFileArgument(Properties props, String propName) throws CmdLineException {
@@ -43,6 +47,8 @@ public class App {
 		List<Match> matches = Match.parse(masterReportFile);
 		List<PortalStudent> pStudents = new PortalRetriever().readLatestRosterFile();
 		List<ScilympiadStudent> sStudents = ScilympiadStudent.readLatestRosterFile(scilympiadRosterDir);
+
+		checkForMissingSchoolsInCoachesFile(schools, pStudents, sStudents);
 
 		System.out.format("Found %1$d portal students and %2$d Scilimpiad students%n",
 			pStudents.size(), sStudents.size());
@@ -67,17 +73,31 @@ public class App {
 		System.out.format("Scilympiad students not in the Portal: %1$3d%n",
 			engine.getSStudentsNotFoundInP().size());
 
-		Stopwatch masterReportTimer = new Stopwatch();
+		Stopwatch reportTimer = new Stopwatch();
 		ReportBuilder rb = new ReportBuilder(engine, masterReportFile, getReportDir());
 		rb.createReport(null, false);
-		masterReportTimer.stopAndReport("Built master report");
 
-		// TODO: Get this from configuration:
-		boolean sendEmail = false;
+		schools.stream().forEach(school -> rb.createReport(school, sendReports));
+		reportTimer.stopAndReport("Built reports");
+	}
 
-		Stopwatch schoolReportTimer = new Stopwatch();
-		schools.stream().forEach(school -> rb.createReport(school, sendEmail));
-		schoolReportTimer.stopAndReport("Built school reports");
+	private void checkForMissingSchoolsInCoachesFile(List<School> schools,
+			List<PortalStudent> pStudents, List<ScilympiadStudent> sStudents) {
+		Set<String> schoolNames = new TreeSet<>();
+		pStudents.stream()
+			.map(pStudent -> pStudent.school)
+			.forEach(schoolNames::add);
+		sStudents.stream()
+			.map(sStudent -> sStudent.school)
+			.forEach(schoolNames::add);
+		List<String> unknownSchools = schoolNames.stream()
+			.filter(schoolName -> schools.stream().noneMatch(
+				school -> school.name.equalsIgnoreCase(schoolName)))
+			.collect(Collectors.toUnmodifiableList());
+		if (!unknownSchools.isEmpty()) {
+			System.out.format("Schools not in coach file (%1$d):%n", unknownSchools.size());
+			unknownSchools.forEach(name -> System.out.format("   %1$s%n", name));
+		}
 	}
 
 	private static File getReportDir() {
