@@ -19,7 +19,6 @@ import javax.mail.internet.MimeMessage;
 import javax.mail.internet.MimeMultipart;
 
 public class Emailer {
-	private static final String PROPERTIES_RESOURCE = "configuration.properties";
 	private static final String EMAIL_BODY_RESOURCE = "EmailBodyText.txt";
 	private static final String EMAIL_SUBJECT = "Missing VASO Student Permissions";
 
@@ -27,7 +26,7 @@ public class Emailer {
 	private final String emailBody;
 
 	public Emailer() throws IOException {
-		props = Util.loadPropertiesFromResource(PROPERTIES_RESOURCE);
+		props = Util.loadPropertiesFromResource(Util.PROPERTIES_RESOURCE);
 		emailBody = Util.getResourceAsString(EMAIL_BODY_RESOURCE);
 	}
 

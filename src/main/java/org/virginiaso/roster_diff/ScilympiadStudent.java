@@ -4,12 +4,18 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.FileVisitOption;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
 import org.apache.commons.lang3.builder.CompareToBuilder;
 import org.apache.poi.ss.usermodel.Cell;
@@ -32,6 +38,8 @@ public class ScilympiadStudent implements Comparable<ScilympiadStudent> {
 		}
 	}
 
+	private static final Pattern ROSTER_FILE_PATTERN = Pattern.compile(
+		"scilympiad-.*\\.xlsx");
 	static final Pattern SCHOOL_PATTERN = Pattern.compile(
 		"^School: (.*)$", Pattern.CASE_INSENSITIVE);
 	private static final Pattern TEAM_NAME_PATTERN = Pattern.compile(
@@ -47,6 +55,29 @@ public class ScilympiadStudent implements Comparable<ScilympiadStudent> {
 	public final String firstName;
 	public final String lastName;
 	public final int grade;
+
+	public static List<ScilympiadStudent> readLatestRosterFile(File rosterDir)
+			throws IOException, ParseException {
+		File rosterFile;
+		try (Stream<Path> stream = Files.find(rosterDir.toPath(), Integer.MAX_VALUE,
+				ScilympiadStudent::matcher, FileVisitOption.FOLLOW_LINKS)) {
+			rosterFile = stream
+				.max(Comparator.comparing(path -> path.getFileName().toString()))
+				.map(Path::toFile)
+				.orElse(null);
+		}
+
+		if (rosterFile == null) {
+			return List.of();
+		}
+
+		return ScilympiadStudent.parse(rosterFile);
+	}
+
+	private static boolean matcher(Path path, BasicFileAttributes attrs) {
+		return attrs.isRegularFile()
+			&& ROSTER_FILE_PATTERN.matcher(path.getFileName().toString()).matches();
+	}
 
 	public static List<ScilympiadStudent> parse(File scilympiadStudentFile)
 			throws IOException, ParseException {
@@ -172,10 +203,10 @@ public class ScilympiadStudent implements Comparable<ScilympiadStudent> {
 	public boolean equals(Object obj) {
 		if (this == obj) {
 			return true;
-		} else if (!(obj instanceof ScilympiadStudent)) {
+		} else if (!(obj instanceof ScilympiadStudent other)) {
 			return false;
 		} else {
-			return this.compareTo((ScilympiadStudent) obj) == 0;
+			return this.compareTo(other) == 0;
 		}
 	}
 

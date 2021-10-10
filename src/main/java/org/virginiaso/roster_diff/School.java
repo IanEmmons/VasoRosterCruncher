@@ -1,7 +1,5 @@
 package org.virginiaso.roster_diff;
 
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
@@ -22,7 +20,9 @@ public class School {
 		.build();
 	private static final String TRANSLATION_RESOURCE = "SchoolNameNormalizations.csv";
 	private static final List<Pair<String, String>> TRANSLATIONS;
+	private static final String SCHOOLS_RESOURCE = "coaches.csv";
 	private static final String[] EMAIL_COLUMNS = { "Coach 1", "Coach 2", "Coach 3" };
+	private static final List<School> SCHOOLS;
 
 	public final String name;
 	public final String normalizedName;
@@ -39,6 +39,17 @@ public class School {
 		} catch (IOException ex) {
 			throw new UncheckedIOException(ex);
 		}
+
+		try (
+			InputStream is = Util.getResourceAsInputStream(SCHOOLS_RESOURCE);
+			CSVParser parser = CSVParser.parse(is, Util.CHARSET, FORMAT);
+		) {
+			SCHOOLS = parser.stream()
+				.map(School::new)
+				.collect(Collectors.toUnmodifiableList());
+		} catch (IOException ex) {
+			throw new UncheckedIOException(ex);
+		}
 	}
 
 	public static String normalize(String schoolName) {
@@ -50,28 +61,8 @@ public class School {
 		return schoolName;
 	}
 
-	public static List<School> parse(File coachesFile) throws IOException {
-		try (InputStream is = new FileInputStream(coachesFile)) {
-			return parse(is);
-		}
-	}
-
-	public static List<School> parse(String coachesResource) throws IOException {
-		try (InputStream is = Util.getResourceAsInputStream(coachesResource)) {
-			return parse(is);
-		}
-	}
-
-	public static List<School> parse(InputStream coachesStream) throws IOException {
-		Stopwatch timer = new Stopwatch();
-		List<School> result;
-		try (CSVParser parser = CSVParser.parse(coachesStream, Util.CHARSET, FORMAT)) {
-			result = parser.stream()
-				.map(School::new)
-				.collect(Collectors.toUnmodifiableList());
-		}
-		timer.stopAndReport("Parsed coaches file");
-		return result;
+	public static List<School> getSchools() {
+		return SCHOOLS;
 	}
 
 	private School(CSVRecord record) {

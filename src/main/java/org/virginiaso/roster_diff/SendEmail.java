@@ -18,7 +18,7 @@ import javax.mail.internet.MimeMultipart;
 
 public class SendEmail {
 	public static void main(String [] args) {
-		Properties props = Util.loadPropertiesFromResource("configuration.properties");
+		Properties props = Util.loadPropertiesFromResource(Util.PROPERTIES_RESOURCE);
 
 		String recipient = props.getProperty("mail.from");
 		String sender = props.getProperty("mail.from");

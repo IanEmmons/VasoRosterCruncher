@@ -107,7 +107,7 @@ public class ScilympiadRetriever {
 	}
 
 	@SuppressWarnings("unused")
-	private HttpResponse<String> printHeaders(HttpResponse<String> response, String message) {
+	private static HttpResponse<String> printHeaders(HttpResponse<String> response, String message) {
 		System.out.format("%1$s%n", message);
 		response.headers().map().entrySet().stream().forEach(entry -> {
 			System.out.format("   '%1$s':%n", entry.getKey());

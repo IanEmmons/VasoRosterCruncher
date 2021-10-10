@@ -113,9 +113,8 @@ public class PortalRetriever {
 		}
 	}
 
-	private static final String PROPERTIES_RESOURCE = "configuration.properties";
 	private static final String ROSTER_FILE_FMT = "portal-%1$tFT%1$tT.json";
-	private static final Pattern ROSTER_FILE_PATTERN = Pattern.compile("portal-.*\\.json");
+	private static final Pattern ROSTER_FILE_PATTERN = Pattern.compile("portal-.*\\.((json)|(csv))");
 	private static final String JSON_MEDIA_TYPE = "application/json";
 	private static final String TOKEN_URL = "https://api.knack.com/v1/applications/%1$s/session";
 	private static final String TOKEN_BODY = "{\"email\":\"%1$s\",\"password\":\"%2$s\"}";
@@ -138,7 +137,7 @@ public class PortalRetriever {
 	private List<PortalStudent> students;
 
 	public PortalRetriever() {
-		Properties props = Util.loadPropertiesFromResource(PROPERTIES_RESOURCE);
+		Properties props = Util.loadPropertiesFromResource(Util.PROPERTIES_RESOURCE);
 		rosterDir = new File(props.getProperty("portal.roster.dir"));
 		user = props.getProperty("portal.user");
 		password = props.getProperty("portal.password");
@@ -224,11 +223,6 @@ public class PortalRetriever {
 		students.addAll(response.records);
 	}
 
-	private static boolean matcher(Path path, BasicFileAttributes attrs) {
-		return attrs.isRegularFile()
-			&& ROSTER_FILE_PATTERN.matcher(path.getFileName().toString()).matches();
-	}
-
 	public List<PortalStudent> readLatestRosterFile() throws IOException {
 		File rosterFile;
 		try (Stream<Path> stream = Files.find(rosterDir.toPath(), Integer.MAX_VALUE,
@@ -243,6 +237,10 @@ public class PortalRetriever {
 			return List.of();
 		}
 
+		if ("csv".equalsIgnoreCase(Util.getExt(rosterFile))) {
+			return PortalStudent.parse(rosterFile);
+		}
+
 		try (
 			InputStream os = new FileInputStream(rosterFile);
 			Reader rdr = new InputStreamReader(os, StandardCharsets.UTF_8);
@@ -253,6 +251,11 @@ public class PortalRetriever {
 			ReportResponse response = gson.fromJson(rdr, ReportResponse.class);
 			return response.records;
 		}
+	}
+
+	private static boolean matcher(Path path, BasicFileAttributes attrs) {
+		return attrs.isRegularFile()
+			&& ROSTER_FILE_PATTERN.matcher(path.getFileName().toString()).matches();
 	}
 
 	public static void main(String [] args) {

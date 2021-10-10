@@ -4,66 +4,45 @@ import java.io.File;
 import java.io.IOException;
 import java.util.EnumMap;
 import java.util.List;
+import java.util.Properties;
 import java.util.stream.Collectors;
 
 public class App {
-	private final File coachesFile;
+	private final File scilympiadRosterDir;
 	private final File masterReportFile;
-	private final File portalFile;
-	private final File scilympiadFile;
 
 	public static void main(String[] args) {
 		try {
 			App app = new App(args);
 			app.run();
 		} catch (CmdLineException ex) {
-			usage(ex.getMessage());
+			if (ex.getMessage() != null && !ex.getMessage().isBlank()) {
+				System.out.format("%n%1$s%n%n", ex.getMessage());
+			}
 		} catch (Throwable ex) {
 			ex.printStackTrace();
 		}
 	}
 
-	private static void usage(String message) {
-		System.out.format("%n");
-		if (message != null && !message.isBlank()) {
-			System.out.format("%1$s%n%n", message);
-		}
-		System.out.format(
-			"Usage: %1$s <coaches-file> <report-all-file> <portal-file> <scilympiad-file>%n%n",
-			App.class.getName());
-	}
-
 	private App(String[] args) throws CmdLineException {
-		if (args.length < 4) {
-			throw new CmdLineException("Too few arguments");
-		} else if (args.length > 4) {
-			throw new CmdLineException("Too many arguments");
-		}
-		coachesFile = parseRequiredFileArgument(args[0]);
-		masterReportFile = parseFileArgument(args[1]);
-		portalFile = parseRequiredFileArgument(args[2]);
-		scilympiadFile = parseRequiredFileArgument(args[3]);
+		Properties props = Util.loadPropertiesFromResource(Util.PROPERTIES_RESOURCE);
+		scilympiadRosterDir = parseFileArgument(props, "scilympiad.roster.dir");
+		masterReportFile = parseFileArgument(props, "master.report.file");
 	}
 
-	private static File parseFileArgument(String arg) {
-		return new File(arg.trim());
-	}
-
-	private static File parseRequiredFileArgument(String arg) throws CmdLineException {
-		File result = parseFileArgument(arg);
-		if (!result.exists()) {
-			throw new CmdLineException("'%1$s' does not exist", arg);
-		} else if (!result.isFile()) {
-			throw new CmdLineException("'%1$s' is not a regular file", arg);
+	private static File parseFileArgument(Properties props, String propName) throws CmdLineException {
+		String fileNameSetting = props.getProperty(propName);
+		if (fileNameSetting == null || fileNameSetting.isBlank()) {
+			throw new CmdLineException("Configuration setting '%1$s' is missing", propName);
 		}
-		return result;
+		return new File(fileNameSetting.trim());
 	}
 
 	private void run() throws IOException, ParseException {
-		List<School> schools = School.parse(coachesFile);
+		List<School> schools = School.getSchools();
 		List<Match> matches = Match.parse(masterReportFile);
-		List<PortalStudent> pStudents = PortalStudent.parse(portalFile);
-		List<ScilympiadStudent> sStudents = ScilympiadStudent.parse(scilympiadFile);
+		List<PortalStudent> pStudents = new PortalRetriever().readLatestRosterFile();
+		List<ScilympiadStudent> sStudents = ScilympiadStudent.readLatestRosterFile(scilympiadRosterDir);
 
 		System.out.format("Found %1$d portal students and %2$d Scilimpiad students%n",
 			pStudents.size(), sStudents.size());
