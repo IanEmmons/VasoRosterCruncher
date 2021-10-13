@@ -5,6 +5,7 @@
 bin/
 build/
 portal-rosters/
+reports-202*/
 scilympiad-rosters/
 master-report.xlsx
 ~$*.xlsx
