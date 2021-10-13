@@ -10,7 +10,7 @@ import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 public class DifferenceEngine {
-	private static final int DISTANCE_THRESHOLD = 6;
+	private static final int DISTANCE_THRESHOLD = 4;
 
 	private final Set<PortalStudent> pStudents;
 	private final Set<ScilympiadStudent> sStudents;
