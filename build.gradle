@@ -46,6 +46,12 @@ task getScilympiadRoster(type: JavaExec) {
 	classpath = sourceSets.main.runtimeClasspath
 }
 
+task sendTestEmail(type: JavaExec) {
+	dependsOn 'classes'
+	mainClass = 'org.virginiaso.roster_diff.Emailer'
+	classpath = sourceSets.main.runtimeClasspath
+}
+
 tasks.named('test') {
 	useJUnitPlatform()
 }

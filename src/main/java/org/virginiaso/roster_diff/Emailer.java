@@ -19,18 +19,38 @@ import javax.mail.internet.MimeMessage;
 import javax.mail.internet.MimeMultipart;
 
 public class Emailer {
-	private static final String EMAIL_BODY_RESOURCE = "EmailBodyText.txt";
+	private static final String EMAIL_BODY_RESOURCE = "EmailBody.html";
 	private static final String EMAIL_SUBJECT = "Missing VASO Student Permissions";
+	private static final String MEDIA_TYPE = "text/html";
 
 	private final Properties props;
 	private final String emailBody;
+	private final String fromAddr;
+	private final String userName;
+	private final String password;
+
+	public static void main(String[] args) {
+		try {
+			File attachment = new File("README.md");
+			List<String> recipients = List.of(
+				"ian@emmons.mobi",
+				"karen@emmons.mobi");
+			Emailer emailer = new Emailer();
+			emailer.send(attachment, recipients);
+		} catch (Throwable ex) {
+			ex.printStackTrace();
+		}
+	}
 
 	public Emailer() throws IOException {
 		props = Util.loadPropertiesFromResource(Util.PROPERTIES_RESOURCE);
 		emailBody = Util.getResourceAsString(EMAIL_BODY_RESOURCE);
+		fromAddr = props.getProperty("mail.from");
+		userName = props.getProperty("mail.user");
+		password = props.getProperty("mail.password");
 	}
 
-	public void send(File attachment, List<String> recipients, long numSStudentsNotFoundInP) {
+	public void send(File attachment, List<String> recipients) {
 		if (recipients == null || recipients.isEmpty()) {
 			return;
 		}
@@ -38,8 +58,7 @@ public class Emailer {
 			Session session = Session.getDefaultInstance(props);
 
 			BodyPart contentPart = new MimeBodyPart();
-			//contentPart.setContent("<h1>This is some <i>HTML</i> text.</h1>", "text/html");
-			contentPart.setContent(String.format(emailBody, numSStudentsNotFoundInP), "text/plain");
+			contentPart.setContent(emailBody, MEDIA_TYPE);
 
 			BodyPart attachmentPart = new MimeBodyPart();
 			attachmentPart.setFileName(attachment.getName());
@@ -52,13 +71,11 @@ public class Emailer {
 			MimeMessage message = new MimeMessage(session);
 			recipients.stream()
 				.forEach(recipient -> addRecipient(message, recipient));
-			message.setFrom(new InternetAddress(props.getProperty("mail.from")));
+			message.setFrom(new InternetAddress(fromAddr));
 			message.setSubject(EMAIL_SUBJECT);
 			message.setContent(multipartContent);
 
-			Transport.send(message,
-				props.getProperty("mail.user"),
-				props.getProperty("mail.password"));
+			Transport.send(message, userName, password);
 			System.out.println("Mail successfully sent");
 		} catch (MessagingException ex) {
 			throw new UncheckedMessagingException(ex);

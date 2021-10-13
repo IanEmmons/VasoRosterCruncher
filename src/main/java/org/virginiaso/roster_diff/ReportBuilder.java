@@ -89,7 +89,7 @@ public class ReportBuilder {
 
 			File report = createSchoolReport(school);
 			if (sendEmail) {
-				emailer.send(report, school.coachEmails, numSStudentsNotFoundInP);
+				emailer.send(report, school.coachEmails);
 			}
 		}
 	}
