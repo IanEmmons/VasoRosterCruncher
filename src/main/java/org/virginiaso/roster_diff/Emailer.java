@@ -23,7 +23,7 @@ public class Emailer {
 	private static final String EMAIL_SUBJECT = "Missing VASO Student Permissions";
 	private static final String MEDIA_TYPE = "text/html";
 
-	private final Properties props;
+	private final Session session;
 	private final String emailBody;
 	private final String fromAddr;
 	private final String userName;
@@ -43,7 +43,8 @@ public class Emailer {
 	}
 
 	public Emailer() throws IOException {
-		props = Util.loadPropertiesFromResource(Util.PROPERTIES_RESOURCE);
+		Properties props = Util.loadPropertiesFromResource(Util.PROPERTIES_RESOURCE);
+		session = Session.getDefaultInstance(props);
 		emailBody = Util.getResourceAsString(EMAIL_BODY_RESOURCE);
 		fromAddr = props.getProperty("mail.from");
 		userName = props.getProperty("mail.user");
@@ -55,8 +56,6 @@ public class Emailer {
 			return;
 		}
 		try {
-			Session session = Session.getDefaultInstance(props);
-
 			BodyPart contentPart = new MimeBodyPart();
 			contentPart.setContent(emailBody, MEDIA_TYPE);
 
@@ -69,9 +68,9 @@ public class Emailer {
 			multipartContent.addBodyPart(attachmentPart);
 
 			MimeMessage message = new MimeMessage(session);
+			message.setFrom(new InternetAddress(fromAddr));
 			recipients.stream()
 				.forEach(recipient -> addRecipient(message, recipient));
-			message.setFrom(new InternetAddress(fromAddr));
 			message.setSubject(EMAIL_SUBJECT);
 			message.setContent(multipartContent);
 
