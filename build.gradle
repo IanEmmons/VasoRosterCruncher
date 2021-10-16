@@ -32,24 +32,28 @@ task diffRosters(type: JavaExec) {
 	dependsOn 'classes'
 	mainClass = 'org.virginiaso.roster_diff.App'
 	classpath = sourceSets.main.runtimeClasspath
+	systemProperty 'mail.password', "$mailPassword"
 }
 
 task getPortalRoster(type: JavaExec) {
 	dependsOn 'classes'
 	mainClass = 'org.virginiaso.roster_diff.PortalRetriever'
 	classpath = sourceSets.main.runtimeClasspath
+	systemProperty 'portal.password', "$portalPassword"
 }
 
 task getScilympiadRoster(type: JavaExec) {
 	dependsOn 'classes'
 	mainClass = 'org.virginiaso.roster_diff.ScilympiadRetriever'
 	classpath = sourceSets.main.runtimeClasspath
+	systemProperty 'scilympiad.password', "$scilympiadPassword"
 }
 
 task sendTestEmail(type: JavaExec) {
 	dependsOn 'classes'
 	mainClass = 'org.virginiaso.roster_diff.Emailer'
 	classpath = sourceSets.main.runtimeClasspath
+	systemProperty 'mail.password', "$mailPassword"
 }
 
 tasks.named('test') {

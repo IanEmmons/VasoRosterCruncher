@@ -71,7 +71,7 @@ public class Util {
 			InputStream is = Util.getResourceAsInputStream(resourceName);
 			Reader rdr = new InputStreamReader(is, CHARSET);
 		) {
-			Properties props = new Properties();
+			Properties props = new Properties(System.getProperties());
 			props.load(rdr);
 			return props;
 		} catch (IOException ex) {
