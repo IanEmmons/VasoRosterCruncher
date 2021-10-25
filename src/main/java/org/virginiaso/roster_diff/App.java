@@ -45,7 +45,7 @@ public class App {
 	private void run() throws IOException, ParseException {
 		List<School> schools = School.getSchools();
 		List<Match> matches = Match.parse(masterReportFile);
-		List<PortalStudent> pStudents = new PortalRetriever().readLatestRosterFile();
+		List<PortalStudent> pStudents = PortalRosterRetrieverFactory.create().readLatestReportFile();
 		List<ScilympiadStudent> sStudents = ScilympiadStudent.readLatestRosterFile(scilympiadRosterDir);
 
 		checkForMissingSchoolsInCoachesFile(schools, pStudents, sStudents);
