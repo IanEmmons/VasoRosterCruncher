@@ -72,13 +72,13 @@ public class PortalStudent implements Comparable<PortalStudent> {
 	}
 
 	@Override
-	public boolean equals(Object obj) {
-		if (this == obj) {
+	public boolean equals(Object rhs) {
+		if (this == rhs) {
 			return true;
-		} else if (!(obj instanceof PortalStudent)) {
+		} else if (!(rhs instanceof PortalStudent rhsAsPS)) {
 			return false;
 		} else {
-			return this.compareTo((PortalStudent) obj) == 0;
+			return this.compareTo(rhsAsPS) == 0;
 		}
 	}
 
