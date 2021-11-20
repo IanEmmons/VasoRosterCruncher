@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.TreeMap;
+import java.util.stream.Collectors;
 
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
@@ -66,14 +67,14 @@ public class ReportBuilder {
 		this.reportDir = Objects.requireNonNull(reportDir, "reportDir");
 	}
 
-	public void createReport(School school, boolean sendEmail) {
-		if (school == null) {
+	public void createReport(String schoolName, List<Coach> coaches, boolean sendEmail) {
+		if (schoolName == null || coaches == null) {
 			try (Workbook workbook = new XSSFWorkbook(XSSFWorkbookType.XLSX)) {
 				createMatchesSheet(workbook);
-				createSNotInPSheet(workbook, school);
-				createPNotInSSheet(workbook, school);
+				createSNotInPSheet(workbook, null);
+				createPNotInSSheet(workbook, null);
 
-				try (OutputStream os = new FileOutputStream(getReportFile(school))) {
+				try (OutputStream os = new FileOutputStream(getReportFile(null))) {
 					workbook.write(os);
 				}
 			} catch (IOException ex) {
@@ -81,15 +82,18 @@ public class ReportBuilder {
 			}
 		} else {
 			long numSStudentsNotFoundInP = engine.getSStudentsNotFoundInP().stream()
-				.filter(student -> student.school.equals(school.normalizedName))
+				.filter(student -> student.school.equals(schoolName))
 				.count();
 			if (numSStudentsNotFoundInP <= 0) {
 				return;
 			}
 
-			File report = createSchoolReport(school);
+			File report = createSchoolReport(schoolName);
 			if (sendEmail) {
-				emailer.send(report, school.coachEmails);
+				List<String> recipients = coaches.stream()
+					.map(Coach::prettyEmail)
+					.collect(Collectors.toUnmodifiableList());
+				emailer.send(report, recipients);
 			}
 		}
 	}
@@ -244,40 +248,40 @@ public class ReportBuilder {
 		sheet.addValidationData(validation);
 	}
 
-	private void createSNotInPSheet(Workbook workbook, School school) {
+	private void createSNotInPSheet(Workbook workbook, String schoolName) {
 		Sheet sheet = workbook.createSheet(S_NOT_P_SHEET_TITLE);
 		setHeadings(sheet, HEADINGS_FOR_STUDENTS_IN_ONLY_ONE_SYSTEM);
 		engine.getSStudentsNotFoundInP().stream()
-			.filter(student -> (school == null || student.school.equals(school.normalizedName)))
+			.filter(student -> (schoolName == null || student.school.equals(schoolName)))
 			.forEach(student -> createStudentRow(sheet, student));
 		sheet.createFreezePane(0, 1);
 		autoSizeColumns(sheet);
 	}
 
-	private void createPNotInSSheet(Workbook workbook, School school) {
+	private void createPNotInSSheet(Workbook workbook, String schoolName) {
 		Sheet sheet = workbook.createSheet(P_NOT_S_SHEET_TITLE);
 		setHeadings(sheet, HEADINGS_FOR_STUDENTS_IN_ONLY_ONE_SYSTEM);
 		engine.getPStudentsNotFoundInS().stream()
-			.filter(student -> (school == null || student.school.equals(school.normalizedName)))
+			.filter(student -> (schoolName == null || student.school.equals(schoolName)))
 			.forEach(student -> createStudentRow(sheet, student));
 		sheet.createFreezePane(0, 1);
 		autoSizeColumns(sheet);
 	}
 
-	private File createSchoolReport(School school) {
-		File file = getReportFile(school);
+	private File createSchoolReport(String schoolName) {
+		File file = getReportFile(schoolName);
 		try (CSVPrinter printer = FORMAT.print(file, Util.CHARSET)) {
 			createSectionRow(printer,
 				"Scilympiad Students with no Permission in the Portal:");
 			engine.getSStudentsNotFoundInP().stream()
-				.filter(student -> student.school.equals(school.normalizedName))
+				.filter(student -> student.school.equals(schoolName))
 				.forEach(student -> createStudentRow(printer, student));
 
 			printer.println();
 			createSectionRow(printer,
 				"Portal Students that do not appear in Scilympiad (just FYI - no action required):");
 			engine.getPStudentsNotFoundInS().stream()
-				.filter(student -> student.school.equals(school.normalizedName))
+				.filter(student -> student.school.equals(schoolName))
 				.forEach(student -> createStudentRow(printer, student));
 
 			return file;
@@ -391,13 +395,13 @@ public class ReportBuilder {
 		}
 	}
 
-	private File getReportFile(School school) {
-		if (school == null) {
+	private File getReportFile(String schoolName) {
+		if (schoolName == null) {
 			return masterReport;
 		} else {
 			reportDir.mkdirs();
 			StringBuilder buffer = new StringBuilder();
-			school.normalizedName.chars()
+			schoolName.chars()
 				.filter(ch -> ch != '.')
 				.map(ch -> (ch == ' ') ? '-' : ch)
 				.forEach(ch -> buffer.append((char) ch));

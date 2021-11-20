@@ -1,25 +1,18 @@
 package org.virginiaso.roster_diff;
 
-public class Coach {
-	public final String firstName;
-	public final String lastName;
-	public final String email;
-	public final String phone;
-	public final String school;
-
-	public Coach() {
-		this.firstName = null;
-		this.lastName = null;
-		this.email = null;
-		this.phone = null;
-		this.school = null;
+public record Coach(
+	String firstName,
+	String lastName,
+	String email,
+	String phone,
+	String school)
+{
+	public String prettyEmail() {
+		return String.format("%1$s %2$s <%3$s>", firstName, lastName, email);
 	}
 
-	public Coach(String firstName, String lastName, String email, String phone, String school) {
-		this.firstName = firstName;
-		this.lastName = lastName;
-		this.email = email;
-		this.phone = phone;
-		this.school = school;
+	@Override
+	public String toString() {
+		return String.format("Coach [%1$s, %2$s, %3$s]", prettyEmail(), phone, school);
 	}
 }

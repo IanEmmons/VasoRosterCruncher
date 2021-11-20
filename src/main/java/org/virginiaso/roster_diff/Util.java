@@ -20,7 +20,9 @@ public class Util {
 	private Util() {}	// prevent instantiation
 
 	public static String normalizeSpace(String str) {
-		return WHITESPACE.matcher(str.trim()).replaceAll(" ");
+		return (str == null)
+			? null
+			: WHITESPACE.matcher(str.trim()).replaceAll(" ");
 	}
 
 	public static File appendToStem(File file, String stemSuffix) {
