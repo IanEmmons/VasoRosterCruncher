@@ -33,8 +33,8 @@ public class Emailer {
 		try {
 			File attachment = new File("README.md");
 			List<String> recipients = List.of(
-				"ian@emmons.mobi",
-				"karen@emmons.mobi");
+				//"Karen Emmons <karen@emmons.mobi>",
+				"Ian Emmons <ian@emmons.mobi>");
 			Emailer emailer = new Emailer();
 			emailer.send(attachment, recipients);
 		} catch (Throwable ex) {

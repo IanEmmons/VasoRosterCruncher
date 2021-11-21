@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.EnumMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.TreeSet;
@@ -43,12 +44,14 @@ public class App {
 	}
 
 	private void run() throws IOException, ParseException {
-		List<School> schools = School.getSchools();
+		List<Coach> coaches = CoachRetrieverFactory.create().readLatestReportFile();
+		Map<String, List<Coach>> schoolToCoachsMap = coaches.stream()
+			.collect(Collectors.groupingBy(coach -> School.normalize(coach.school())));
 		List<Match> matches = Match.parse(masterReportFile);
-		List<PortalStudent> pStudents = new PortalRetriever().readLatestRosterFile();
+		List<PortalStudent> pStudents = PortalRosterRetrieverFactory.create().readLatestReportFile();
 		List<ScilympiadStudent> sStudents = ScilympiadStudent.readLatestRosterFile(scilympiadRosterDir);
 
-		checkForMissingSchoolsInCoachesFile(schools, pStudents, sStudents);
+		checkForMissingSchoolsInCoachesFile(schoolToCoachsMap.keySet(), pStudents, sStudents);
 
 		System.out.format("Found %1$d portal students and %2$d Scilimpiad students%n",
 			pStudents.size(), sStudents.size());
@@ -75,13 +78,14 @@ public class App {
 
 		Stopwatch reportTimer = new Stopwatch();
 		ReportBuilder rb = new ReportBuilder(engine, masterReportFile, getReportDir());
-		rb.createReport(null, false);
+		rb.createReport(null, null, false);
 
-		schools.stream().forEach(school -> rb.createReport(school, sendReports));
+		schoolToCoachsMap.entrySet().stream().forEach(
+			schoolEntry -> rb.createReport(schoolEntry.getKey(), schoolEntry.getValue(), sendReports));
 		reportTimer.stopAndReport("Built reports");
 	}
 
-	private void checkForMissingSchoolsInCoachesFile(List<School> schools,
+	private void checkForMissingSchoolsInCoachesFile(Set<String> schools,
 			List<PortalStudent> pStudents, List<ScilympiadStudent> sStudents) {
 		Set<String> schoolNames = new TreeSet<>();
 		pStudents.stream()
@@ -92,7 +96,7 @@ public class App {
 			.forEach(schoolNames::add);
 		List<String> unknownSchools = schoolNames.stream()
 			.filter(schoolName -> schools.stream().noneMatch(
-				school -> school.name.equalsIgnoreCase(schoolName)))
+				school -> school.equalsIgnoreCase(schoolName)))
 			.collect(Collectors.toUnmodifiableList());
 		if (!unknownSchools.isEmpty()) {
 			System.out.format("Schools not in coach file (%1$d):%n", unknownSchools.size());

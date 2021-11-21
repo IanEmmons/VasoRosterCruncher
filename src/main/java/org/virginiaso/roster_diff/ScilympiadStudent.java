@@ -203,13 +203,13 @@ public class ScilympiadStudent implements Comparable<ScilympiadStudent> {
 	}
 
 	@Override
-	public boolean equals(Object obj) {
-		if (this == obj) {
+	public boolean equals(Object rhs) {
+		if (this == rhs) {
 			return true;
-		} else if (!(obj instanceof ScilympiadStudent)) {
+		} else if (!(rhs instanceof ScilympiadStudent rhsAsSS)) {
 			return false;
 		} else {
-			return this.compareTo((ScilympiadStudent) obj) == 0;
+			return this.compareTo(rhsAsSS) == 0;
 		}
 	}
 
