@@ -58,9 +58,9 @@ public class DifferenceEngine {
 				pStudents.remove(pStudent);
 				sStudents.remove(sStudent);
 			} else {
-				throw new IllegalStateException(String.format(
-					"Master report verdicts should be 'Different' or 'Same', not '%1$s'",
-					match.getVerdict()));
+				throw new IllegalStateException(
+					"Master report verdicts should be 'Different' or 'Same', not '%1$s'"
+						.formatted(match.getVerdict()));
 			}
 		}
 
@@ -185,10 +185,10 @@ public class DifferenceEngine {
 
 	public String formatDistanceHistogram() {
 		return computeDistanceHistogram().entrySet().stream()
-			.map(entry -> String.format("%1$2d: %2$2d", entry.getKey(), entry.getValue()))
+			.map(entry -> "%1$2d: %2$2d".formatted(entry.getKey(), entry.getValue()))
 			.collect(Collectors.joining(
-				String.format("%n   "),
-				String.format("Histogram of distances:%n   "),
-				String.format("%n")));
+				"%n   ".formatted(),
+				"Histogram of distances:%n   ".formatted(),
+				"%n".formatted()));
 	}
 }

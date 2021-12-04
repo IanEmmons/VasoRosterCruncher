@@ -40,7 +40,7 @@ public class App {
 		if (fileNameSetting == null || fileNameSetting.isBlank()) {
 			throw new CmdLineException("Configuration setting '%1$s' is missing", propName);
 		}
-		return new File(fileNameSetting.trim());
+		return new File(fileNameSetting.strip());
 	}
 
 	private void run() throws IOException, ParseException {
@@ -105,12 +105,12 @@ public class App {
 	}
 
 	private static File getReportDir() {
-		File reportDir = new File(String
-			.format("reports-%1$TF_%1$TT", System.currentTimeMillis())
+		File reportDir = new File("reports-%1$TF_%1$TT"
+			.formatted(System.currentTimeMillis())
 			.replace(':', '-'));
 		if (reportDir.exists()) {
-			throw new IllegalStateException(String.format(
-				"Report directory '%1$s' already exists", reportDir.getPath()));
+			throw new IllegalStateException("Report directory '%1$s' already exists"
+				.formatted(reportDir.getPath()));
 		}
 		return reportDir;
 	}

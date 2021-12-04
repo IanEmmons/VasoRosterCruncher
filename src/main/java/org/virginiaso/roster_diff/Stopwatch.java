@@ -14,7 +14,7 @@ public class Stopwatch {
 	}
 
 	public void report(String messageFormat, Object... args) {
-		String message = String.format(messageFormat, args);
+		String message = messageFormat.formatted(args);
 		System.out.format("%1$s in %2$.1f seconds%n", message, duration);
 	}
 

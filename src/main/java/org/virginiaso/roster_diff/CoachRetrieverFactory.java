@@ -29,9 +29,6 @@ public class CoachRetrieverFactory {
 			JsonObject email = new JsonObject();
 			email.add("email", new JsonPrimitive(src.email()));
 
-			JsonObject phone = new JsonObject();
-			phone.add("formatted", new JsonPrimitive((src.phone() == null) ? "" : src.phone()));
-
 			JsonObject school = new JsonObject();
 			school.add("id", new JsonPrimitive("unknown"));
 			school.add("identifier", new JsonPrimitive(src.school()));
@@ -43,7 +40,6 @@ public class CoachRetrieverFactory {
 			result.add("id", new JsonPrimitive("unknown"));
 			result.add("field_96", name);
 			result.add("field_97", email);
-			result.add("field_1148", phone);
 			result.add("field_106", schoolArray);
 			return result;
 		}
@@ -60,21 +56,11 @@ public class CoachRetrieverFactory {
 			String email = Util.normalizeSpace(json.getAsJsonObject()
 				.get("field_97").getAsJsonObject()
 				.get("email").getAsString());
-			String phone = getPhoneFromField(json.getAsJsonObject().get("field_1148"));
 			String school = Util.normalizeSpace(json.getAsJsonObject()
 				.get("field_106").getAsJsonArray()
 				.get(0).getAsJsonObject()
 				.get("identifier").getAsString());
-			return new Coach(firstName, lastName, email, phone, school);
-		}
-
-		private String getPhoneFromField(JsonElement phoneField) {
-			if (phoneField.isJsonObject()) {
-				return Util.normalizeSpace(phoneField.getAsJsonObject()
-					.get("formatted").getAsString());
-			} else {
-				return null;
-			}
+			return new Coach(firstName, lastName, email, school);
 		}
 	}
 
@@ -85,8 +71,7 @@ public class CoachRetrieverFactory {
 			.setPrettyPrinting()
 			.registerTypeAdapter(Coach.class, new CoachSerializer())
 			.create();
-		return new PortalRetriever<Coach>(
-			new TypeToken<ReportResponse<Coach>>(){}.getType(),
-			gson, "coaches", 483, 1078);
+		return new PortalRetriever<Coach>(gson, "coach",
+			new TypeToken<ReportResponse<Coach>>(){}.getType());
 	}
 }

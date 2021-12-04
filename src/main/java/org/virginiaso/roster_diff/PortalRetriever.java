@@ -28,9 +28,13 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.stream.JsonWriter;
 
@@ -59,8 +63,8 @@ public class PortalRetriever<Item> {
 	private static final String JSON_MEDIA_TYPE = "application/json";
 	private static final String TOKEN_URL = "https://api.knack.com/v1/applications/%1$s/session";
 	private static final String TOKEN_BODY = "{\"email\":\"%1$s\",\"password\":\"%2$s\"}";
-	private static final String REPORT_URL = "https://api.knack.com/v1/pages/scene_%1$d/"
-		+ "views/view_%2$d/records?format=raw&page=%3$d&rows_per_page=%4$d";
+	private static final String REPORT_URL = "https://api.knack.com/v1/pages/scene_%1$s/"
+		+ "views/view_%2$s/records?format=raw&page=%3$d&rows_per_page=%4$d";
 	private static final int PAGE_SIZE = 100;
 
 	// From the configuration file:
@@ -72,10 +76,11 @@ public class PortalRetriever<Item> {
 	// From the factory:
 	private final Type reportResponseType;
 	private final Gson gson;
+	private final String reportName;
 	private final String fileNameFormat;
 	private final Pattern fileNamePattern;
-	private final int scene;
-	private final int view;
+	private final String scene;
+	private final String view;
 
 	// Computed here:
 	private final HttpClient client;
@@ -84,19 +89,21 @@ public class PortalRetriever<Item> {
 	private int lastPageRead;	// 1-based
 	private List<Item> reportItems;
 
-	public PortalRetriever(Type reportResponseType, Gson gson, String fileNamePrefix, int scene, int view) {
+	public PortalRetriever(Gson gson, String reportName, Type reportResponseType) {
 		var props = Util.loadPropertiesFromResource(Util.PROPERTIES_RESOURCE);
+		var appName = props.getProperty("portal.application.name");
 		reportDir = new File(props.getProperty("portal.roster.dir"));
 		user = props.getProperty("portal.user");
 		password = props.getProperty("portal.password");
-		applicationId = props.getProperty("portal.application.id");
+		applicationId = props.getProperty("portal.%1$s.application.id".formatted(appName));
+		scene = props.getProperty("portal.%1$s.%2$s.scene".formatted(appName, reportName));
+		view = props.getProperty("portal.%1$s.%2$s.view".formatted(appName, reportName));
 
 		this.reportResponseType = reportResponseType;
 		this.gson = gson;
-		fileNameFormat = fileNamePrefix + "-%1$tFT%1$tT.json";
-		fileNamePattern = Pattern.compile(fileNamePrefix + "-.*\\.json");
-		this.scene = scene;
-		this.view = view;
+		this.reportName = reportName;
+		fileNameFormat = reportName + "-%1$tFT%1$tT.json";
+		fileNamePattern = Pattern.compile(reportName + "-.*\\.json");
 
 		client = HttpClient.newHttpClient();
 		userToken = null;
@@ -119,14 +126,15 @@ public class PortalRetriever<Item> {
 			.thenAccept(body -> stringHolder.string = body)
 			.join();
 
-		try (var pw = new PrintWriter("raw-portal-report-body.json", Util.CHARSET)) {
+		var fileName = "raw-portal-%1$s-report-body.json".formatted(reportName);
+		try (var pw = new PrintWriter(fileName, Util.CHARSET)) {
 			pw.print(stringHolder.string);
 		}
 	}
 
 	public void saveReport() throws IOException {
 		retrieveReport();
-		var reportFile = new File(reportDir, String.format(fileNameFormat, LocalDateTime.now()));
+		var reportFile = new File(reportDir, fileNameFormat.formatted(LocalDateTime.now()));
 		if (!reportDir.exists()) {
 			reportDir.mkdirs();
 		}
@@ -156,7 +164,7 @@ public class PortalRetriever<Item> {
 	}
 
 	private HttpRequest getHttpRequest(int currentPage) {
-		var url = String.format(REPORT_URL, scene, view, currentPage, PAGE_SIZE);
+		var url = REPORT_URL.formatted(scene, view, currentPage, PAGE_SIZE);
 		return HttpRequest.newBuilder(URI.create(url))
 			.GET()
 			.header("Accept", JSON_MEDIA_TYPE)
@@ -167,8 +175,8 @@ public class PortalRetriever<Item> {
 
 	private void getUserToken() throws IOException {
 		if (userToken == null || userToken.isBlank()) {
-			var url = String.format(TOKEN_URL, applicationId);
-			var requestBody = String.format(TOKEN_BODY, user, password);
+			var url = TOKEN_URL.formatted(applicationId);
+			var requestBody = TOKEN_BODY.formatted(user, password);
 			var httpRequest = HttpRequest.newBuilder(URI.create(url))
 				.POST(BodyPublishers.ofString(requestBody))
 				.header("Content-Type", JSON_MEDIA_TYPE)
@@ -181,10 +189,24 @@ public class PortalRetriever<Item> {
 	}
 
 	private void setUserToken(String jsonResponseBody) {
-		userToken = JsonParser.parseString(jsonResponseBody).getAsJsonObject()
-			.get("session").getAsJsonObject()
-			.get("user").getAsJsonObject()
-			.get("token").getAsString();
+		JsonObject response = JsonParser.parseString(jsonResponseBody).getAsJsonObject();
+		if (response.get("session") != null) {
+			userToken = response
+				.get("session").getAsJsonObject()
+				.get("user").getAsJsonObject()
+				.get("token").getAsString();
+		} else {
+			JsonArray errors = response.get("errors").getAsJsonArray();
+			var errorMessages = Util.asStream(errors)
+				.map(JsonElement::getAsJsonObject)
+				.map(error -> error.get("message"))
+				.map(JsonElement::getAsString)
+				.collect(Collectors.joining(
+					"%n".formatted(),
+					"Unable to retrieve Portal API token: ",
+					""));
+			throw new IllegalStateException(errorMessages);
+		}
 	}
 
 	public List<Item> readLatestReportFile() throws IOException {
@@ -227,13 +249,16 @@ public class PortalRetriever<Item> {
 	public static void main(String [] args) {
 		try {
 			PortalRetriever<PortalStudent> rosterRetriever = PortalRosterRetrieverFactory.create();
+			PortalRetriever<Coach> coachRetriever = CoachRetrieverFactory.create();
+
+			//rosterRetriever.saveRawReport();
+			//coachRetriever.saveRawReport();
+
 			rosterRetriever.saveReport();
 			List<PortalStudent> students = rosterRetriever.readLatestReportFile();
 			System.out.format("Found %1$d students:%n", students.size());
 			students.forEach(student -> System.out.format("   %1$s%n", student));
 
-			PortalRetriever<Coach> coachRetriever = CoachRetrieverFactory.create();
-			//coachRetriever.saveRawReport();
 			coachRetriever.saveReport();
 			List<Coach> coaches = coachRetriever.readLatestReportFile();
 			System.out.format("Found %1$d coaches:%n", coaches.size());

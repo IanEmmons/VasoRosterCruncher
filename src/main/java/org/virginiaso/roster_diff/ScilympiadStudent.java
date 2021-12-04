@@ -192,7 +192,7 @@ public class ScilympiadStudent implements Comparable<ScilympiadStudent> {
 	private static String[] splitFullName(String fullName) {
 		String[] pieces = fullName.split(",", 2);
 		for (int i = 0; i < pieces.length; ++i) {
-			pieces[i] = pieces[i].trim();
+			pieces[i] = pieces[i].strip();
 		}
 		return pieces;
 	}
@@ -225,8 +225,7 @@ public class ScilympiadStudent implements Comparable<ScilympiadStudent> {
 
 	@Override
 	public String toString() {
-		return String.format(
-			"ScilympiadStudent [grade=%d, last=%s, first=%s, school=%s]",
+		return "ScilympiadStudent [grade=%d, last=%s, first=%s, school=%s]".formatted(
 			grade, lastName, firstName, school);
 	}
 }

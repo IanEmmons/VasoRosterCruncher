@@ -405,7 +405,7 @@ public class ReportBuilder {
 				.filter(ch -> ch != '.')
 				.map(ch -> (ch == ' ') ? '-' : ch)
 				.forEach(ch -> buffer.append((char) ch));
-			return new File(reportDir, String.format("%1$s.csv", buffer));
+			return new File(reportDir, "%1$s.csv".formatted(buffer));
 		}
 	}
 }

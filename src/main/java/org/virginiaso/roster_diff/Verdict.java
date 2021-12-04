@@ -20,7 +20,7 @@ public enum Verdict {
 	public static Verdict fromMasterReport(String masterReportVerdict) {
 		String verdictToSearchFor = (masterReportVerdict == null)
 			? null
-			: masterReportVerdict.trim().toUpperCase();
+			: masterReportVerdict.strip().toUpperCase();
 		Verdict result = Stream.of(values())
 			.filter(value -> value.name().equals(verdictToSearchFor))
 			.findFirst()

@@ -11,6 +11,8 @@ import java.nio.charset.StandardCharsets;
 import java.util.MissingResourceException;
 import java.util.Properties;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 public class Util {
 	public static final String PROPERTIES_RESOURCE = "configuration.properties";
@@ -22,17 +24,16 @@ public class Util {
 	public static String normalizeSpace(String str) {
 		return (str == null)
 			? null
-			: WHITESPACE.matcher(str.trim()).replaceAll(" ");
+			: WHITESPACE.matcher(str.strip()).replaceAll(" ");
 	}
 
 	public static File appendToStem(File file, String stemSuffix) {
-		return new File(file.getParentFile(), String.format("%1$s%2$s.%3$s",
+		return new File(file.getParentFile(), "%1$s%2$s.%3$s".formatted(
 			getStem(file), stemSuffix, getExt(file)));
 	}
 
 	public static File changeExt(File file, String newExt) {
-		return new File(file.getParentFile(), String.format("%1$s.%2$s",
-			getStem(file), newExt));
+		return new File(file.getParentFile(), "%1$s.%2$s".formatted(getStem(file), newExt));
 	}
 
 	public static String getExt(File file) {
@@ -79,5 +80,9 @@ public class Util {
 		} catch (IOException ex) {
 			throw new UncheckedIOException(ex);
 		}
+	}
+
+	public static <T> Stream<T> asStream(Iterable<T> it) {
+		return StreamSupport.stream(it.spliterator(), false);
 	}
 }

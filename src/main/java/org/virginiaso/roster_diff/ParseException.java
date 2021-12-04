@@ -3,11 +3,11 @@ package org.virginiaso.roster_diff;
 public class ParseException extends Exception {
 	private static final long serialVersionUID = 1L;
 
-	public ParseException(String format, Object... args) {
-		super(String.format(format, args));
+	public ParseException(String formatStr, Object... args) {
+		super(formatStr.formatted(args));
 	}
 
-	public ParseException(Throwable cause, String format, Object... args) {
-		super(String.format(format, args), cause);
+	public ParseException(Throwable cause, String formatStr, Object... args) {
+		super(formatStr.formatted(args), cause);
 	}
 }

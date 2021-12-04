@@ -61,8 +61,7 @@ public class SchoolTest {
 
 		System.out.format("Normalized schools (%1$d):%n", normalizedSchools.keySet().size());
 		normalizedSchools.entrySet().stream()
-			.map(entry -> String.format("   %1$s: %2$s%n",
-				entry.getKey(),
+			.map(entry -> "   %1$s: %2$s%n".formatted(entry.getKey(),
 				entry.getValue().stream().collect(Collectors.joining("', '", "'", "'"))))
 			.forEach(line -> System.out.print(line));
 

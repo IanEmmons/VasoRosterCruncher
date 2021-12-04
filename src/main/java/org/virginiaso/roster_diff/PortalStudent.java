@@ -95,8 +95,7 @@ public class PortalStudent implements Comparable<PortalStudent> {
 
 	@Override
 	public String toString() {
-		return String.format(
-			"PortalStudent [grade=%d, last=%s, first=%s, nick=%s, school=%s]",
+		return "PortalStudent [grade=%d, last=%s, first=%s, nick=%s, school=%s]".formatted(
 			grade, lastName, firstName, nickName, school);
 	}
 }

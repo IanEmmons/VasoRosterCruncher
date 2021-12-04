@@ -4,15 +4,14 @@ public record Coach(
 	String firstName,
 	String lastName,
 	String email,
-	String phone,
 	String school)
 {
 	public String prettyEmail() {
-		return String.format("%1$s %2$s <%3$s>", firstName, lastName, email);
+		return "%1$s %2$s <%3$s>".formatted(firstName, lastName, email);
 	}
 
 	@Override
 	public String toString() {
-		return String.format("Coach [%1$s, %2$s, %3$s]", prettyEmail(), phone, school);
+		return "Coach [%1$s, %2$s]".formatted(prettyEmail(), school);
 	}
 }

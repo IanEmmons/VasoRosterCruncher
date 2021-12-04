@@ -88,7 +88,7 @@ public class ScilympiadRetriever {
 
 	public static HttpRequest.BodyPublisher ofFormData(Map<String, String> data) {
 		return HttpRequest.BodyPublishers.ofString(data.entrySet().stream()
-			.map(entry -> String.format("%1$s=%2$s",
+			.map(entry -> "%1$s=%2$s".formatted(
 				URLEncoder.encode(entry.getKey(), StandardCharsets.UTF_8),
 				URLEncoder.encode(entry.getValue(), StandardCharsets.UTF_8)))
 			.collect(Collectors.joining("&")));
@@ -142,7 +142,7 @@ public class ScilympiadRetriever {
 	public static void main(String [] args) {
 		ScilympiadRetriever retriever = new ScilympiadRetriever();
 		retriever.getReport();
-//		System.out.format("Found %1$d students:%n", students.size());
-//		students.forEach(student -> System.out.format("   %1$s%n", student));
+		//System.out.format("Found %1$d students:%n", students.size());
+		//students.forEach(student -> System.out.format("   %1$s%n", student));
 	}
 }
