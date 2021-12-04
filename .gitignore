@@ -4,8 +4,9 @@
 .settings/
 bin/
 build/
-portal-rosters/
+div-a-2021-archive/
+portal-reports/
 reports-202*/
-scilympiad-rosters/
+scilympiad-reports/
 master-report.xlsx
 ~$*.xlsx
