@@ -11,7 +11,6 @@ import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 public class App {
-	private final File scilympiadRosterDir;
 	private final File masterReportFile;
 	private final boolean sendReports;
 
@@ -29,18 +28,9 @@ public class App {
 	}
 
 	private App(String[] args) throws CmdLineException {
-		Properties props = Util.loadPropertiesFromResource(Util.PROPERTIES_RESOURCE);
-		scilympiadRosterDir = parseFileArgument(props, "scilympiad.roster.dir");
-		masterReportFile = parseFileArgument(props, "master.report.file");
+		Properties props = Util.loadPropertiesFromResource(Util.CONFIGURATION_RESOURCE);
+		masterReportFile = Util.parseFileArgument(props, "master.report.file");
 		sendReports = Boolean.parseBoolean(props.getProperty("send.reports", "false"));
-	}
-
-	private static File parseFileArgument(Properties props, String propName) throws CmdLineException {
-		String fileNameSetting = props.getProperty(propName);
-		if (fileNameSetting == null || fileNameSetting.isBlank()) {
-			throw new CmdLineException("Configuration setting '%1$s' is missing", propName);
-		}
-		return new File(fileNameSetting.strip());
 	}
 
 	private void run() throws IOException, ParseException {
@@ -49,7 +39,7 @@ public class App {
 			.collect(Collectors.groupingBy(coach -> School.normalize(coach.school())));
 		List<Match> matches = Match.parse(masterReportFile);
 		List<PortalStudent> pStudents = PortalRosterRetrieverFactory.create().readLatestReportFile();
-		List<ScilympiadStudent> sStudents = ScilympiadStudent.readLatestRosterFile(scilympiadRosterDir);
+		List<ScilympiadStudent> sStudents = ScilympiadStudent.readLatestRosterFile();
 
 		checkForMissingSchoolsInCoachesFile(schoolToCoachsMap.keySet(), pStudents, sStudents);
 

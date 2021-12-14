@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UncheckedIOException;
 import java.nio.file.FileVisitOption;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -13,8 +14,10 @@ import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.BiPredicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.apache.commons.lang3.builder.CompareToBuilder;
@@ -38,8 +41,6 @@ public class ScilympiadStudent implements Comparable<ScilympiadStudent> {
 		}
 	}
 
-	private static final Pattern ROSTER_FILE_PATTERN = Pattern.compile(
-		"scilympiad-.*\\.xlsx");
 	static final Pattern SCHOOL_PATTERN = Pattern.compile(
 		"^School: (.*)$", Pattern.CASE_INSENSITIVE);
 	private static final Pattern TEAM_NAME_PATTERN = Pattern.compile(
@@ -56,45 +57,53 @@ public class ScilympiadStudent implements Comparable<ScilympiadStudent> {
 	public final String lastName;
 	public final int grade;
 
-	public static List<ScilympiadStudent> readLatestRosterFile(File rosterDir)
-			throws IOException, ParseException {
-		File rosterFile;
-		try (Stream<Path> stream = Files.find(rosterDir.toPath(), Integer.MAX_VALUE,
-				ScilympiadStudent::matcher, FileVisitOption.FOLLOW_LINKS)) {
-			rosterFile = stream
-				.max(Comparator.comparing(path -> path.getFileName().toString()))
+	public static List<ScilympiadStudent> readLatestRosterFile()
+			throws IOException {
+		var props = Util.loadPropertiesFromResource(Util.CONFIGURATION_RESOURCE);
+		var siteName = props.getProperty("scilympiad.site");
+		var reportDir = Util.parseFileArgument(props, "scilympiad.report.dir");
+		var suffixStr = props.getProperty("scilympiad.%1$s.suffixes".formatted(siteName), "");
+		return Stream.of(suffixStr.split(","))
+			.map(String::strip)
+			.map(suffix -> getLatestReportFileForSuffix(reportDir, suffix))
+			.filter(file -> file != null)
+			.map(ScilympiadStudent::parse)
+			.flatMap(List::stream)
+			.collect(Collectors.toUnmodifiableList());
+	}
+
+	private static File getLatestReportFileForSuffix(File reportDir, String suffix) {
+		var fileNamePattern = Pattern.compile("roster%1$s-.*\\.xlsx".formatted(suffix));
+		BiPredicate<Path, BasicFileAttributes> matcher = (Path path, BasicFileAttributes attrs)
+			-> attrs.isRegularFile() && fileNamePattern.matcher(path.getFileName().toString()).matches();
+		try (Stream<Path> stream = Files.find(reportDir.toPath(), Integer.MAX_VALUE,
+				matcher, FileVisitOption.FOLLOW_LINKS)) {
+			return stream
 				.map(Path::toFile)
+				.max(Comparator.comparing(File::getName))
 				.orElse(null);
+		} catch (IOException ex) {
+			throw new UncheckedIOException(ex);
 		}
-
-		if (rosterFile == null) {
-			return List.of();
-		}
-
-		return ScilympiadStudent.parse(rosterFile);
 	}
 
-	private static boolean matcher(Path path, BasicFileAttributes attrs) {
-		return attrs.isRegularFile()
-			&& ROSTER_FILE_PATTERN.matcher(path.getFileName().toString()).matches();
-	}
-
-	public static List<ScilympiadStudent> parse(File scilympiadStudentFile)
-			throws IOException, ParseException {
+	public static List<ScilympiadStudent> parse(File scilympiadStudentFile) {
 		try (InputStream is = new FileInputStream(scilympiadStudentFile)) {
 			return parse(is);
+		} catch (IOException ex) {
+			throw new UncheckedIOException(ex);
 		}
 	}
 
-	public static List<ScilympiadStudent> parse(String scilympiadStudentResource)
-			throws IOException, ParseException {
+	public static List<ScilympiadStudent> parse(String scilympiadStudentResource) {
 		try (InputStream is = Util.getResourceAsInputStream(scilympiadStudentResource)) {
 			return parse(is);
+		} catch (IOException ex) {
+			throw new UncheckedIOException(ex);
 		}
 	}
 
-	public static List<ScilympiadStudent> parse(InputStream scilympiadStudentStream)
-			throws IOException, ParseException {
+	public static List<ScilympiadStudent> parse(InputStream scilympiadStudentStream) {
 		Stopwatch timer = new Stopwatch();
 		try (Workbook workbook = new XSSFWorkbook(scilympiadStudentStream)) {
 			List<ScilympiadStudent> result = new ArrayList<>();
@@ -131,6 +140,8 @@ public class ScilympiadStudent implements Comparable<ScilympiadStudent> {
 
 			timer.stopAndReport("Parsed Scilympiad student file");
 			return result;
+		} catch (IOException ex) {
+			throw new UncheckedIOException(ex);
 		}
 	}
 
@@ -154,7 +165,7 @@ public class ScilympiadStudent implements Comparable<ScilympiadStudent> {
 	}
 
 	private ScilympiadStudent(String school, String teamName, String teamNumber,
-			String fullName, String grade, int rowNum) throws ParseException {
+			String fullName, String grade, int rowNum) {
 		this.school = School.normalize(school);
 		this.teamName = teamName.toLowerCase();
 		this.teamNumber = teamNumber.toLowerCase();

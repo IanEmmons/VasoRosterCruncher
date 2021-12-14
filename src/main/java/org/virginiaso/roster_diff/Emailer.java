@@ -43,7 +43,7 @@ public class Emailer {
 	}
 
 	public Emailer() throws IOException {
-		Properties props = Util.loadPropertiesFromResource(Util.PROPERTIES_RESOURCE);
+		Properties props = Util.loadPropertiesFromResource(Util.CONFIGURATION_RESOURCE);
 		session = Session.getDefaultInstance(props);
 		emailBody = Util.getResourceAsString(EMAIL_BODY_RESOURCE);
 		fromAddr = props.getProperty("mail.from");

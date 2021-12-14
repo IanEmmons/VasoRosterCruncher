@@ -15,7 +15,7 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 public class Util {
-	public static final String PROPERTIES_RESOURCE = "configuration.properties";
+	public static final String CONFIGURATION_RESOURCE = "configuration.properties";
 	public static final Charset CHARSET = StandardCharsets.UTF_8;
 	private static final Pattern WHITESPACE = Pattern.compile("\\s\\s+");
 
@@ -84,5 +84,14 @@ public class Util {
 
 	public static <T> Stream<T> asStream(Iterable<T> it) {
 		return StreamSupport.stream(it.spliterator(), false);
+	}
+
+	public static File parseFileArgument(Properties props, String propName) {
+		String fileNameSetting = props.getProperty(propName);
+		if (fileNameSetting == null || fileNameSetting.isBlank()) {
+			throw new IllegalArgumentException(
+				"Configuration setting '%1$s' is missing".formatted(propName));
+		}
+		return new File(fileNameSetting.strip());
 	}
 }

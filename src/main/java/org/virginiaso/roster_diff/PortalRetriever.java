@@ -90,9 +90,9 @@ public class PortalRetriever<Item> {
 	private List<Item> reportItems;
 
 	public PortalRetriever(Gson gson, String reportName, Type reportResponseType) {
-		var props = Util.loadPropertiesFromResource(Util.PROPERTIES_RESOURCE);
+		var props = Util.loadPropertiesFromResource(Util.CONFIGURATION_RESOURCE);
 		var appName = props.getProperty("portal.application.name");
-		reportDir = new File(props.getProperty("portal.roster.dir"));
+		reportDir = Util.parseFileArgument(props, "portal.report.dir");
 		user = props.getProperty("portal.user");
 		password = props.getProperty("portal.password");
 		applicationId = props.getProperty("portal.%1$s.application.id".formatted(appName));
@@ -214,8 +214,8 @@ public class PortalRetriever<Item> {
 		try (Stream<Path> stream = Files.find(reportDir.toPath(), Integer.MAX_VALUE,
 			this::matcher, FileVisitOption.FOLLOW_LINKS)) {
 			reportFile = stream
-				.max(Comparator.comparing(path -> path.getFileName().toString()))
 				.map(Path::toFile)
+				.max(Comparator.comparing(File::getName))
 				.orElse(null);
 		}
 
@@ -257,12 +257,12 @@ public class PortalRetriever<Item> {
 			rosterRetriever.saveReport();
 			List<PortalStudent> students = rosterRetriever.readLatestReportFile();
 			System.out.format("Found %1$d students:%n", students.size());
-			students.forEach(student -> System.out.format("   %1$s%n", student));
+			//students.forEach(student -> System.out.format("   %1$s%n", student));
 
 			coachRetriever.saveReport();
 			List<Coach> coaches = coachRetriever.readLatestReportFile();
 			System.out.format("Found %1$d coaches:%n", coaches.size());
-			coaches.forEach(coach -> System.out.format("   %1$s%n", coach));
+			//coaches.forEach(coach -> System.out.format("   %1$s%n", coach));
 		} catch (IOException ex) {
 			ex.printStackTrace();
 		}

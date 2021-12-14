@@ -1,6 +1,6 @@
 package org.virginiaso.roster_diff;
 
-public class ParseException extends Exception {
+public class ParseException extends RuntimeException {
 	private static final long serialVersionUID = 1L;
 
 	public ParseException(String formatStr, Object... args) {
