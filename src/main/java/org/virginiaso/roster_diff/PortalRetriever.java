@@ -251,14 +251,14 @@ public class PortalRetriever<Item> {
 
 	public static void main(String [] args) {
 		try {
-			PortalRetriever<PortalStudent> rosterRetriever = PortalRosterRetrieverFactory.create();
+			PortalRetriever<Student> rosterRetriever = StudentRetrieverFactory.create();
 			PortalRetriever<Coach> coachRetriever = CoachRetrieverFactory.create();
 
 			//rosterRetriever.saveRawReport();
 			//coachRetriever.saveRawReport();
 
 			rosterRetriever.saveReport();
-			List<PortalStudent> students = rosterRetriever.readLatestReportFile();
+			List<Student> students = rosterRetriever.readLatestReportFile();
 			System.out.format("Found %1$d students:%n", students.size());
 			//students.forEach(student -> System.out.format("   %1$s%n", student));
 

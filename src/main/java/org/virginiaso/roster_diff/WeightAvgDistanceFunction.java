@@ -10,7 +10,7 @@ public class WeightAvgDistanceFunction implements DistanceFunction {
 	private static final LevenshteinDistance LD = LevenshteinDistance.getDefaultInstance();
 
 	@Override
-	public int applyAsInt(PortalStudent pStudent, ScilympiadStudent sStudent) {
+	public int applyAsInt(Student pStudent, ScilympiadStudent sStudent) {
 		int lastNameDist = LD.apply(pStudent.lastName(), sStudent.lastName);
 		int firstNameDist = Math.min(
 			LD.apply(pStudent.firstName(), sStudent.firstName),

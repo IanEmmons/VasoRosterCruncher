@@ -28,10 +28,10 @@ public class Match {
 	}
 
 	private final ScilympiadStudent sStudent;
-	private final PortalStudent pStudent;
+	private final Student pStudent;
 	private final Verdict verdict;
 
-	Match(ScilympiadStudent sStudent, PortalStudent pStudent, Verdict verdict) {
+	Match(ScilympiadStudent sStudent, Student pStudent, Verdict verdict) {
 		this.sStudent = sStudent;
 		this.pStudent = pStudent;
 		this.verdict = verdict;
@@ -78,7 +78,7 @@ public class Match {
 					currentSStudent = new ScilympiadStudent(school, lastName, firstName,
 						grade, rowNum);
 				} else if (ReportBuilder.PORTAL_ROW_LABEL.equalsIgnoreCase(source)) {
-					PortalStudent pStudent = new PortalStudent(firstName, lastName, nickName,
+					Student pStudent = new Student(firstName, lastName, nickName,
 						school, grade);
 					Verdict verdict = Verdict.fromMasterReport(
 						getStringCellValue(row, Column.VERDICT));
@@ -116,7 +116,7 @@ public class Match {
 		return sStudent;
 	}
 
-	public PortalStudent getPStudent() {
+	public Student getPStudent() {
 		return pStudent;
 	}
 

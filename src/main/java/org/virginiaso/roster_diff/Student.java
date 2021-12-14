@@ -4,8 +4,8 @@ import java.util.Objects;
 
 import org.apache.commons.lang3.builder.CompareToBuilder;
 
-public record PortalStudent(String firstName, String lastName, String nickName, String school,
-	int grade) implements Comparable<PortalStudent> {
+public record Student(String firstName, String lastName, String nickName, String school,
+	int grade) implements Comparable<Student> {
 
 	@Override
 	public int hashCode() {
@@ -16,7 +16,7 @@ public record PortalStudent(String firstName, String lastName, String nickName, 
 	public boolean equals(Object rhs) {
 		if (this == rhs) {
 			return true;
-		} else if (!(rhs instanceof PortalStudent rhsAsPS)) {
+		} else if (!(rhs instanceof Student rhsAsPS)) {
 			return false;
 		} else {
 			return this.compareTo(rhsAsPS) == 0;
@@ -24,7 +24,7 @@ public record PortalStudent(String firstName, String lastName, String nickName, 
 	}
 
 	@Override
-	public int compareTo(PortalStudent rhs) {
+	public int compareTo(Student rhs) {
 		return new CompareToBuilder()
 			.append(this.school, rhs.school)
 			.append(this.lastName, rhs.lastName)
@@ -36,7 +36,7 @@ public record PortalStudent(String firstName, String lastName, String nickName, 
 
 	@Override
 	public String toString() {
-		return "PortalStudent [grade=%d, last=%s, first=%s, nick=%s, school=%s]".formatted(
+		return "Student [grade=%d, last=%s, first=%s, nick=%s, school=%s]".formatted(
 			grade, lastName, firstName, nickName, school);
 	}
 }

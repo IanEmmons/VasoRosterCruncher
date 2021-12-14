@@ -12,15 +12,15 @@ import java.util.stream.Collectors;
 public class DifferenceEngine {
 	private static final int DISTANCE_THRESHOLD = 4;
 
-	private final Set<PortalStudent> pStudents;
+	private final Set<Student> pStudents;
 	private final Set<ScilympiadStudent> sStudents;
 	private final List<Match> matches;
-	private final Set<PortalStudent> pStudentsNotFoundInS;
+	private final Set<Student> pStudentsNotFoundInS;
 	private final Set<ScilympiadStudent> sStudentsNotFoundInP;
-	private final Map<ScilympiadStudent, Map<Integer, List<PortalStudent>>> results;
+	private final Map<ScilympiadStudent, Map<Integer, List<Student>>> results;
 
 	public static DifferenceEngine compare(List<Match> manualMatches,
-			List<PortalStudent> pStudents, List<ScilympiadStudent> sStudents,
+			List<Student> pStudents, List<ScilympiadStudent> sStudents,
 			DistanceFunction distanceFunction) {
 		Stopwatch timer = new Stopwatch();
 		DifferenceEngine engine = new DifferenceEngine(manualMatches, pStudents, sStudents);
@@ -29,7 +29,7 @@ public class DifferenceEngine {
 		return engine;
 	}
 
-	private DifferenceEngine(List<Match> manualMatches, List<PortalStudent> pStudentList,
+	private DifferenceEngine(List<Match> manualMatches, List<Student> pStudentList,
 			List<ScilympiadStudent> sStudentList) {
 		pStudents = new TreeSet<>(pStudentList);
 		sStudents = new TreeSet<>(sStudentList);
@@ -40,7 +40,7 @@ public class DifferenceEngine {
 			// student in the match.  This ensures that we are preserving the most
 			// recent values of the student fields that are not used in the equality
 			// comparison (like team number).
-			PortalStudent pStudent = pStudents.stream()
+			Student pStudent = pStudents.stream()
 				.filter(match.getPStudent()::equals)
 				.findFirst()
 				.orElse(null);
@@ -70,7 +70,7 @@ public class DifferenceEngine {
 	}
 
 	private void compare(DistanceFunction distanceFunction) {
-		for (PortalStudent pStudent : pStudents) {
+		for (Student pStudent : pStudents) {
 			for (ScilympiadStudent sStudent : sStudents) {
 				boolean pairIsMarkedAsDifferent = matches.stream()
 					.filter(match -> Verdict.DIFFERENT.equals(match.getVerdict()))
@@ -89,9 +89,9 @@ public class DifferenceEngine {
 		}
 
 		// Compile a list of exact matches:
-		for (Map.Entry<ScilympiadStudent, Map<Integer, List<PortalStudent>>> entry : results.entrySet()) {
+		for (Map.Entry<ScilympiadStudent, Map<Integer, List<Student>>> entry : results.entrySet()) {
 			ScilympiadStudent sStudent = entry.getKey();
-			List<PortalStudent> exactMatches = entry.getValue().get(0);
+			List<Student> exactMatches = entry.getValue().get(0);
 			if (exactMatches != null) {
 				exactMatches.stream()
 					.map(pStudent -> new Match(sStudent, pStudent, Verdict.EXACT_MATCH))
@@ -103,8 +103,8 @@ public class DifferenceEngine {
 		for (Match match : matches) {
 			if (match.getVerdict() == Verdict.EXACT_MATCH) {
 				results.remove(match.getSStudent());
-				for (Map<Integer, List<PortalStudent>> outerValue : results.values()) {
-					for (List<PortalStudent> innerValue : outerValue.values()) {
+				for (Map<Integer, List<Student>> outerValue : results.values()) {
+					for (List<Student> innerValue : outerValue.values()) {
 						innerValue.remove(match.getPStudent());
 					}
 				}
@@ -112,7 +112,7 @@ public class DifferenceEngine {
 		}
 
 		// Threshold the results data structure:
-		for (Map<Integer, List<PortalStudent>> outerValue : results.values()) {
+		for (Map<Integer, List<Student>> outerValue : results.values()) {
 			List<Integer> keysToRemove = outerValue.keySet().stream()
 				.filter(key -> key > DISTANCE_THRESHOLD)
 				.collect(Collectors.toList());
@@ -120,17 +120,17 @@ public class DifferenceEngine {
 		}
 
 		// Remove empty entries in the results data structure:
-		for (Map.Entry<ScilympiadStudent, Map<Integer, List<PortalStudent>>> entry : results.entrySet()) {
+		for (Map.Entry<ScilympiadStudent, Map<Integer, List<Student>>> entry : results.entrySet()) {
 			List<Integer> keysToRemove = entry.getValue().entrySet().stream()
 				.filter(innerEntry -> innerEntry.getValue().isEmpty())
 				.map(Map.Entry::getKey)
 				.collect(Collectors.toList());
 			keysToRemove.forEach(key -> entry.getValue().remove(key));
 		}
-		Iterator<Map.Entry<ScilympiadStudent, Map<Integer, List<PortalStudent>>>> it
+		Iterator<Map.Entry<ScilympiadStudent, Map<Integer, List<Student>>>> it
 			= results.entrySet().iterator();
 		while (it.hasNext()) {
-			Map.Entry<ScilympiadStudent, Map<Integer, List<PortalStudent>>> entry = it.next();
+			Map.Entry<ScilympiadStudent, Map<Integer, List<Student>>> entry = it.next();
 			if (entry.getValue().isEmpty()) {
 				it.remove();
 			}
@@ -151,7 +151,7 @@ public class DifferenceEngine {
 		return matches;
 	}
 
-	public Set<PortalStudent> getPStudentsNotFoundInS() {
+	public Set<Student> getPStudentsNotFoundInS() {
 		return pStudentsNotFoundInS;
 	}
 
@@ -165,15 +165,15 @@ public class DifferenceEngine {
 	 * @return A map of s-student -> map of distance -> list of p-students at that
 	 *         distance from the s-student
 	 */
-	public Map<ScilympiadStudent, Map<Integer, List<PortalStudent>>> getResults() {
+	public Map<ScilympiadStudent, Map<Integer, List<Student>>> getResults() {
 		return results;
 	}
 
 	/* Maps distances in the results data structure to counts of those distances */
 	public Map<Integer, Integer> computeDistanceHistogram() {
 		Map<Integer, Integer> distanceHistogram = new TreeMap<>();
-		for (Map<Integer, List<PortalStudent>> value : results.values()) {
-			for (Map.Entry<Integer, List<PortalStudent>> entry : value.entrySet()) {
+		for (Map<Integer, List<Student>> value : results.values()) {
+			for (Map.Entry<Integer, List<Student>> entry : value.entrySet()) {
 				Integer distance = entry.getKey();
 				int numPStudents = entry.getValue().size();
 				distanceHistogram.merge(distance, numPStudents,

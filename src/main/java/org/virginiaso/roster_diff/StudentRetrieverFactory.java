@@ -16,11 +16,11 @@ import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
 import com.google.gson.reflect.TypeToken;
 
-public class PortalRosterRetrieverFactory {
-	private static class PortalStudentSerializer implements JsonSerializer<PortalStudent>,
-			JsonDeserializer<PortalStudent> {
+public class StudentRetrieverFactory {
+	private static class StudentSerializer implements JsonSerializer<Student>,
+			JsonDeserializer<Student> {
 		@Override
-		public JsonElement serialize(PortalStudent src, Type typeOfSrc,
+		public JsonElement serialize(Student src, Type typeOfSrc,
 				JsonSerializationContext context) {
 			JsonObject name = new JsonObject();
 			name.add("first", new JsonPrimitive(src.firstName()));
@@ -43,7 +43,7 @@ public class PortalRosterRetrieverFactory {
 		}
 
 		@Override
-		public PortalStudent deserialize(JsonElement json, Type typeOfT,
+		public Student deserialize(JsonElement json, Type typeOfT,
 				JsonDeserializationContext context) {
 			String firstName = Util.normalizeSpace(json.getAsJsonObject()
 				.get("field_52").getAsJsonObject()
@@ -59,18 +59,18 @@ public class PortalRosterRetrieverFactory {
 				.get("identifier").getAsString());
 			int grade = json.getAsJsonObject()
 				.get("field_90").getAsInt();
-			return new PortalStudent(firstName, lastName, nickName, school, grade);
+			return new Student(firstName, lastName, nickName, school, grade);
 		}
 	}
 
-	private PortalRosterRetrieverFactory() {}	// prevent instantiation
+	private StudentRetrieverFactory() {}	// prevent instantiation
 
-	public static PortalRetriever<PortalStudent> create() {
+	public static PortalRetriever<Student> create() {
 		Gson gson = new GsonBuilder()
 			.setPrettyPrinting()
-			.registerTypeAdapter(PortalStudent.class, new PortalStudentSerializer())
+			.registerTypeAdapter(Student.class, new StudentSerializer())
 			.create();
-		return new PortalRetriever<PortalStudent>(gson, "roster",
-			new TypeToken<ReportResponse<PortalStudent>>(){}.getType());
+		return new PortalRetriever<Student>(gson, "roster",
+			new TypeToken<ReportResponse<Student>>(){}.getType());
 	}
 }

@@ -103,7 +103,7 @@ public class ReportBuilder {
 		 * found by the difference engine with the manually adjudicated matches from the
 		 * master report.
 		 */
-		Map<ScilympiadStudent, Map<Integer, List<PortalStudent>>> matchesForDisplay
+		Map<ScilympiadStudent, Map<Integer, List<Student>>> matchesForDisplay
 			= new TreeMap<>();
 		matchesForDisplay.putAll(engine.getResults());
 		engine.getMatches().stream()
@@ -122,7 +122,7 @@ public class ReportBuilder {
 		List<Integer> portalRowNumbers = new ArrayList<>();
 		for (var entry : matchesForDisplay.entrySet()) {
 			ScilympiadStudent sStudent = entry.getKey();
-			Map<Integer, List<PortalStudent>> matches = entry.getValue();
+			Map<Integer, List<Student>> matches = entry.getValue();
 			createNearMatchRowScilympiad(sheet, sStudent, matches, styles,
 				isEvenSStudentIndex, portalRowNumbers);
 			isEvenSStudentIndex = !isEvenSStudentIndex;
@@ -160,7 +160,7 @@ public class ReportBuilder {
 	}
 
 	private void createNearMatchRowScilympiad(Sheet sheet, ScilympiadStudent sStudent,
-			Map<Integer, List<PortalStudent>> matches, EnumMap<Style, CellStyle> styles,
+			Map<Integer, List<Student>> matches, EnumMap<Style, CellStyle> styles,
 			boolean isEvenSStudentIndex, List<Integer> portalRowNumbers) {
 		Row row = createNextRow(sheet);
 		CellStyle firstStyle = styles.get(
@@ -190,7 +190,7 @@ public class ReportBuilder {
 	}
 
 	private void createNearMatchRowPortal(Sheet sheet, int distance,
-			PortalStudent pStudent, CellStyle firstStyle, CellStyle subsequentStyle,
+			Student pStudent, CellStyle firstStyle, CellStyle subsequentStyle,
 			List<Integer> portalRowNumbers) {
 		Row row = createNextRow(sheet);
 		portalRowNumbers.add(row.getRowNum());
@@ -246,7 +246,7 @@ public class ReportBuilder {
 		setHeadings(sheet, HEADINGS_FOR_STUDENTS_IN_ONLY_ONE_SYSTEM);
 		engine.getSStudentsNotFoundInP().stream()
 			.filter(student -> (schoolName == null || student.school.equals(schoolName)))
-			.forEach(student -> createStudentRow(sheet, student));
+			.forEach(student -> createScilympiadStudentRow(sheet, student));
 		sheet.createFreezePane(0, 1);
 		autoSizeColumns(sheet);
 	}
@@ -256,7 +256,7 @@ public class ReportBuilder {
 		setHeadings(sheet, HEADINGS_FOR_STUDENTS_IN_ONLY_ONE_SYSTEM);
 		engine.getPStudentsNotFoundInS().stream()
 			.filter(student -> (schoolName == null || student.school().equals(schoolName)))
-			.forEach(student -> createStudentRow(sheet, student));
+			.forEach(student -> createPortalStudentRow(sheet, student));
 		sheet.createFreezePane(0, 1);
 		autoSizeColumns(sheet);
 	}
@@ -268,14 +268,14 @@ public class ReportBuilder {
 				"Scilympiad Students with no Permission in the Portal:");
 			engine.getSStudentsNotFoundInP().stream()
 				.filter(student -> student.school.equals(schoolName))
-				.forEach(student -> createStudentRow(printer, student));
+				.forEach(student -> createScilympiadStudentRow(printer, student));
 
 			printer.println();
 			createSectionRow(printer,
 				"Portal Students that do not appear in Scilympiad (just FYI - no action required):");
 			engine.getPStudentsNotFoundInS().stream()
 				.filter(student -> student.school().equals(schoolName))
-				.forEach(student -> createStudentRow(printer, student));
+				.forEach(student -> createPortalStudentRow(printer, student));
 
 			return file;
 		} catch (IOException ex) {
@@ -290,7 +290,7 @@ public class ReportBuilder {
 		printer.println();
 	}
 
-	private void createStudentRow(CSVPrinter printer, ScilympiadStudent student) {
+	private void createScilympiadStudentRow(CSVPrinter printer, ScilympiadStudent student) {
 		try {
 			printer.print(student.school);
 			printer.print(student.lastName);
@@ -303,7 +303,7 @@ public class ReportBuilder {
 		}
 	}
 
-	private void createStudentRow(Sheet sheet, ScilympiadStudent student) {
+	private void createScilympiadStudentRow(Sheet sheet, ScilympiadStudent student) {
 		Row row = createNextRow(sheet);
 		createNextCell(row, CellType.STRING)
 			.setCellValue(student.school);
@@ -316,7 +316,7 @@ public class ReportBuilder {
 			.setCellValue(student.grade);
 	}
 
-	private void createStudentRow(CSVPrinter printer, PortalStudent student) {
+	private void createPortalStudentRow(CSVPrinter printer, Student student) {
 		try {
 			printer.print(student.school());
 			printer.print(student.lastName());
@@ -329,7 +329,7 @@ public class ReportBuilder {
 		}
 	}
 
-	private void createStudentRow(Sheet sheet, PortalStudent student) {
+	private void createPortalStudentRow(Sheet sheet, Student student) {
 		Row row = createNextRow(sheet);
 		createNextCell(row, CellType.STRING)
 			.setCellValue(student.school());

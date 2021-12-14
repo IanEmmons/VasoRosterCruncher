@@ -2,7 +2,7 @@ package org.virginiaso.roster_diff;
 
 public class SimpleDistanceFunction implements DistanceFunction {
 	@Override
-	public int applyAsInt(PortalStudent pStudent, ScilympiadStudent sStudent) {
+	public int applyAsInt(Student pStudent, ScilympiadStudent sStudent) {
 		if (pStudent.lastName().equalsIgnoreCase(sStudent.lastName)
 			&& (pStudent.firstName().equalsIgnoreCase(sStudent.firstName)
 				|| pStudent.nickName().equalsIgnoreCase(sStudent.firstName))
