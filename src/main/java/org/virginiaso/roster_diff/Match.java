@@ -17,22 +17,14 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
 public class Match {
 	private static enum Column {
-		SOURCE(0),
-		DISTANCE(1),
-		SCHOOL(2),
-		TEAM_NAME(3),
-		TEAM_NUMBER(4),
-		LAST_NAME(5),
-		FIRST_NAME(6),
-		NICKNAME(7),
-		GRADE(8),
-		VERDICT(9);
-
-		public final int columnIndex;
-
-		private Column(int columnIndex) {
-			this.columnIndex = columnIndex;
-		}
+		SOURCE,
+		DISTANCE,
+		SCHOOL,
+		LAST_NAME,
+		FIRST_NAME,
+		NICKNAME,
+		GRADE,
+		VERDICT
 	}
 
 	private final ScilympiadStudent sStudent;
@@ -78,15 +70,13 @@ public class Match {
 				Row row = iter.next();
 				String source = getStringCellValue(row, Column.SOURCE);
 				String school = getStringCellValue(row, Column.SCHOOL);
-				String teamName = getStringCellValue(row, Column.TEAM_NAME);
-				String teamNumber = getStringCellValue(row, Column.TEAM_NUMBER);
 				String lastName = getStringCellValue(row, Column.LAST_NAME);
 				String firstName = getStringCellValue(row, Column.FIRST_NAME);
 				String nickName = getStringCellValue(row, Column.NICKNAME);
 				int grade = getNumericCellValue(row, Column.GRADE);
 				if (ReportBuilder.SCILYMPIAD_ROW_LABEL.equalsIgnoreCase(source)) {
-					currentSStudent = new ScilympiadStudent(school, teamName, teamNumber,
-						lastName, firstName, grade, rowNum);
+					currentSStudent = new ScilympiadStudent(school, lastName, firstName,
+						grade, rowNum);
 				} else if (ReportBuilder.PORTAL_ROW_LABEL.equalsIgnoreCase(source)) {
 					PortalStudent pStudent = new PortalStudent(firstName, lastName, nickName,
 						school, grade);
@@ -104,7 +94,7 @@ public class Match {
 	}
 
 	private static String getStringCellValue(Row row, Column column) {
-		Cell cell = row.getCell(column.columnIndex, MissingCellPolicy.RETURN_BLANK_AS_NULL);
+		Cell cell = row.getCell(column.ordinal(), MissingCellPolicy.RETURN_BLANK_AS_NULL);
 		if (cell == null) {
 			return "";
 		} else {
@@ -116,7 +106,7 @@ public class Match {
 	}
 
 	private static int getNumericCellValue(Row row, Column column) {
-		Cell cell = row.getCell(column.columnIndex, MissingCellPolicy.RETURN_BLANK_AS_NULL);
+		Cell cell = row.getCell(column.ordinal(), MissingCellPolicy.RETURN_BLANK_AS_NULL);
 		return (cell == null)
 			? -1
 			: (int) Math.round(cell.getNumericCellValue());

@@ -30,15 +30,10 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
 public class ScilympiadStudent implements Comparable<ScilympiadStudent> {
 	static enum Column {
-		TEAM_NUMBER(0),
-		STUDENT_NAME(1),
-		GRADE(3);
-
-		public final int columnIndex;
-
-		private Column(int columnIndex) {
-			this.columnIndex = columnIndex;
-		}
+		TEAM_NUMBER,
+		STUDENT_NAME,
+		LOGIN_ID,
+		GRADE
 	}
 
 	static final Pattern SCHOOL_PATTERN = Pattern.compile(
@@ -51,8 +46,6 @@ public class ScilympiadStudent implements Comparable<ScilympiadStudent> {
 		"^([0-9]+)\\s*((st)|(nd)|(rd)|(th))?$", Pattern.CASE_INSENSITIVE);
 
 	public final String school;
-	public final String teamName;
-	public final String teamNumber;
 	public final String firstName;
 	public final String lastName;
 	public final int grade;
@@ -88,28 +81,14 @@ public class ScilympiadStudent implements Comparable<ScilympiadStudent> {
 	}
 
 	public static List<ScilympiadStudent> parse(File scilympiadStudentFile) {
-		try (InputStream is = new FileInputStream(scilympiadStudentFile)) {
-			return parse(is);
-		} catch (IOException ex) {
-			throw new UncheckedIOException(ex);
-		}
-	}
-
-	public static List<ScilympiadStudent> parse(String scilympiadStudentResource) {
-		try (InputStream is = Util.getResourceAsInputStream(scilympiadStudentResource)) {
-			return parse(is);
-		} catch (IOException ex) {
-			throw new UncheckedIOException(ex);
-		}
-	}
-
-	public static List<ScilympiadStudent> parse(InputStream scilympiadStudentStream) {
+		List<ScilympiadStudent> result = new ArrayList<>();
 		Stopwatch timer = new Stopwatch();
-		try (Workbook workbook = new XSSFWorkbook(scilympiadStudentStream)) {
-			List<ScilympiadStudent> result = new ArrayList<>();
 
+		try (
+			InputStream is = new FileInputStream(scilympiadStudentFile);
+			Workbook workbook = new XSSFWorkbook(is);
+		) {
 			String currentSchool = "";
-			String currentTeamName = "";
 			Sheet sheet = workbook.getSheetAt(0);
 
 			Iterator<Row> iter = sheet.iterator();
@@ -127,26 +106,26 @@ public class ScilympiadStudent implements Comparable<ScilympiadStudent> {
 				} else if (school != null) {
 					currentSchool = school;
 				} else if (teamName != null) {
-					currentTeamName = teamName;
+					// Do nothing
 				} else if (teamNumber == null) {
 					throw new ParseException("Unexpected value '%1$s' in cell A%2$d",
 						firstColumn, rowNum);
 				} else {
-					result.add(new ScilympiadStudent(currentSchool, currentTeamName,
-						teamNumber, getCellValue(row, Column.STUDENT_NAME),
+					result.add(new ScilympiadStudent(currentSchool,
+						getCellValue(row, Column.STUDENT_NAME),
 						getCellValue(row, Column.GRADE), rowNum));
 				}
 			}
-
-			timer.stopAndReport("Parsed Scilympiad student file");
-			return result;
 		} catch (IOException ex) {
 			throw new UncheckedIOException(ex);
 		}
+
+		timer.stopAndReport("Parsed Scilympiad student file");
+		return result;
 	}
 
 	static String getCellValue(Row row, Column column) {
-		Cell cell = row.getCell(column.columnIndex, MissingCellPolicy.RETURN_BLANK_AS_NULL);
+		Cell cell = row.getCell(column.ordinal(), MissingCellPolicy.RETURN_BLANK_AS_NULL);
 		if (cell == null) {
 			return "";
 		} else {
@@ -164,11 +143,8 @@ public class ScilympiadStudent implements Comparable<ScilympiadStudent> {
 			: null;
 	}
 
-	private ScilympiadStudent(String school, String teamName, String teamNumber,
-			String fullName, String grade, int rowNum) {
+	private ScilympiadStudent(String school, String fullName, String grade, int rowNum) {
 		this.school = School.normalize(school);
-		this.teamName = teamName.toLowerCase();
-		this.teamNumber = teamNumber.toLowerCase();
 
 		String[] pieces = splitFullName(fullName);
 		if (pieces.length == 2) {
@@ -190,11 +166,8 @@ public class ScilympiadStudent implements Comparable<ScilympiadStudent> {
 		}
 	}
 
-	ScilympiadStudent(String school, String teamName, String teamNumber,
-		String lastName, String firstName, int grade, int rowNum) {
+	ScilympiadStudent(String school, String lastName, String firstName, int grade, int rowNum) {
 		this.school = School.normalize(school);
-		this.teamName = Util.normalizeSpace(teamName).toLowerCase();
-		this.teamNumber = Util.normalizeSpace(teamNumber).toLowerCase();
 		this.lastName = Util.normalizeSpace(lastName).toLowerCase();
 		this.firstName = Util.normalizeSpace(firstName).toLowerCase();
 		this.grade = grade;

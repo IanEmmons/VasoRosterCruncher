@@ -37,11 +37,10 @@ public class ReportBuilder {
 	static final String MATCHES_SHEET_TITLE = "Adjudicated Matches";
 	static final String SCILYMPIAD_ROW_LABEL = "Scilympiad:";
 	static final String PORTAL_ROW_LABEL = "Portal:";
-	private static final int VERDICT_COLUMN_NUMBER = 9;
+	private static final int VERDICT_COLUMN_NUMBER = 7;
 	private static final String[] VERDICT_COLUMN_VALUES = {"—", "Different", "Same"};
 	private static final String[] HEADINGS_FOR_STUDENTS_IN_ONLY_ONE_SYSTEM = {
-		"School", "Team Name", "Team Number", "Last Name", "First Name",
-		"Nickname", "Grade"
+		"School", "Last Name", "First Name", "Nickname", "Grade"
 	};
 	private static final CSVFormat FORMAT = CSVFormat.DEFAULT.builder()
 		.setHeader(HEADINGS_FOR_STUDENTS_IN_ONLY_ONE_SYSTEM)
@@ -117,8 +116,8 @@ public class ReportBuilder {
 		EnumMap<Style, CellStyle> styles = createMatchesSheetStyles(workbook);
 
 		Sheet sheet = workbook.createSheet(MATCHES_SHEET_TITLE);
-		setHeadings(sheet, "Source", "Distance", "School", "Team Name", "Team Number",
-			"Last Name", "First Name", "Nickname", "Grade", "Verdict");
+		setHeadings(sheet, "Source", "Distance", "School", "Last Name", "First Name",
+			"Nickname", "Grade", "Verdict");
 		boolean isEvenSStudentIndex = false;
 		List<Integer> portalRowNumbers = new ArrayList<>();
 		for (var entry : matchesForDisplay.entrySet()) {
@@ -176,10 +175,6 @@ public class ReportBuilder {
 		createNextCell(row, CellType.STRING, subsequentStyle)
 			.setCellValue(sStudent.school);
 		createNextCell(row, CellType.STRING, subsequentStyle)
-			.setCellValue(sStudent.teamName);
-		createNextCell(row, CellType.STRING, subsequentStyle)
-			.setCellValue(sStudent.teamNumber.toUpperCase());
-		createNextCell(row, CellType.STRING, subsequentStyle)
 			.setCellValue(sStudent.lastName);
 		createNextCell(row, CellType.STRING, subsequentStyle)
 			.setCellValue(sStudent.firstName);
@@ -209,8 +204,6 @@ public class ReportBuilder {
 		}
 		createNextCell(row, CellType.STRING, subsequentStyle)
 			.setCellValue(pStudent.school);
-		createNextCell(row, CellType.BLANK, subsequentStyle);
-		createNextCell(row, CellType.BLANK, subsequentStyle);
 		createNextCell(row, CellType.STRING, subsequentStyle)
 			.setCellValue(pStudent.lastName);
 		createNextCell(row, CellType.STRING, subsequentStyle)
@@ -300,8 +293,6 @@ public class ReportBuilder {
 	private void createStudentRow(CSVPrinter printer, ScilympiadStudent student) {
 		try {
 			printer.print(student.school);
-			printer.print(student.teamName);
-			printer.print(student.teamNumber.toUpperCase());
 			printer.print(student.lastName);
 			printer.print(student.firstName);
 			printer.print("");
@@ -317,10 +308,6 @@ public class ReportBuilder {
 		createNextCell(row, CellType.STRING)
 			.setCellValue(student.school);
 		createNextCell(row, CellType.STRING)
-			.setCellValue(student.teamName);
-		createNextCell(row, CellType.STRING)
-			.setCellValue(student.teamNumber.toUpperCase());
-		createNextCell(row, CellType.STRING)
 			.setCellValue(student.lastName);
 		createNextCell(row, CellType.STRING)
 			.setCellValue(student.firstName);
@@ -332,8 +319,6 @@ public class ReportBuilder {
 	private void createStudentRow(CSVPrinter printer, PortalStudent student) {
 		try {
 			printer.print(student.school);
-			printer.print("");
-			printer.print("");
 			printer.print(student.lastName);
 			printer.print(student.firstName);
 			printer.print(student.nickName);
@@ -348,8 +333,6 @@ public class ReportBuilder {
 		Row row = createNextRow(sheet);
 		createNextCell(row, CellType.STRING)
 			.setCellValue(student.school);
-		createNextCell(row, CellType.BLANK);
-		createNextCell(row, CellType.BLANK);
 		createNextCell(row, CellType.STRING)
 			.setCellValue(student.lastName);
 		createNextCell(row, CellType.STRING)
