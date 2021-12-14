@@ -210,6 +210,7 @@ public class PortalRetriever<Item> {
 	}
 
 	public List<Item> readLatestReportFile() throws IOException {
+		Stopwatch timer = new Stopwatch();
 		File reportFile;
 		try (Stream<Path> stream = Files.find(reportDir.toPath(), Integer.MAX_VALUE,
 			this::matcher, FileVisitOption.FOLLOW_LINKS)) {
@@ -224,7 +225,9 @@ public class PortalRetriever<Item> {
 		}
 
 		try (InputStream is = new FileInputStream(reportFile)) {
-			return readJsonReport(is, (PortalRetriever<Item>) null);
+			List<Item> items = readJsonReport(is, (PortalRetriever<Item>) null);
+			timer.stopAndReport("Parsed Portal %1$s file".formatted(reportName));
+			return items;
 		}
 	}
 
