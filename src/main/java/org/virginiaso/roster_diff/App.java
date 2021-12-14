@@ -79,7 +79,7 @@ public class App {
 			List<PortalStudent> pStudents, List<ScilympiadStudent> sStudents) {
 		Set<String> schoolNames = new TreeSet<>();
 		pStudents.stream()
-			.map(pStudent -> pStudent.school)
+			.map(pStudent -> pStudent.school())
 			.forEach(schoolNames::add);
 		sStudents.stream()
 			.map(sStudent -> sStudent.school)

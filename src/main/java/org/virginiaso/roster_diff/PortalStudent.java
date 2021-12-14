@@ -4,20 +4,8 @@ import java.util.Objects;
 
 import org.apache.commons.lang3.builder.CompareToBuilder;
 
-public class PortalStudent implements Comparable<PortalStudent> {
-	public final String firstName;
-	public final String lastName;
-	public final String nickName;
-	public final String school;
-	public final int grade;
-
-	PortalStudent(String firstName, String lastName, String nickName, String school, int grade) {
-		this.firstName = Util.normalizeSpace(firstName).toLowerCase();
-		this.lastName = Util.normalizeSpace(lastName).toLowerCase();
-		this.nickName = Util.normalizeSpace(nickName).toLowerCase();
-		this.school = School.normalize(school);
-		this.grade = grade;
-	}
+public record PortalStudent(String firstName, String lastName, String nickName, String school,
+	int grade) implements Comparable<PortalStudent> {
 
 	@Override
 	public int hashCode() {

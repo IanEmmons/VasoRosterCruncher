@@ -203,15 +203,15 @@ public class ReportBuilder {
 				.setCellValue(distance);
 		}
 		createNextCell(row, CellType.STRING, subsequentStyle)
-			.setCellValue(pStudent.school);
+			.setCellValue(pStudent.school());
 		createNextCell(row, CellType.STRING, subsequentStyle)
-			.setCellValue(pStudent.lastName);
+			.setCellValue(pStudent.lastName());
 		createNextCell(row, CellType.STRING, subsequentStyle)
-			.setCellValue(pStudent.firstName);
+			.setCellValue(pStudent.firstName());
 		createNextCell(row, CellType.STRING, subsequentStyle)
-			.setCellValue(pStudent.nickName);
+			.setCellValue(pStudent.nickName());
 		createNextCell(row, CellType.NUMERIC, subsequentStyle)
-			.setCellValue(pStudent.grade);
+			.setCellValue(pStudent.grade());
 		if (distance == Verdict.SAME.getCorrespondingDistance()) {
 			createNextCell(row, CellType.STRING, subsequentStyle)
 				.setCellValue(VERDICT_COLUMN_VALUES[2]);
@@ -255,7 +255,7 @@ public class ReportBuilder {
 		Sheet sheet = workbook.createSheet(P_NOT_S_SHEET_TITLE);
 		setHeadings(sheet, HEADINGS_FOR_STUDENTS_IN_ONLY_ONE_SYSTEM);
 		engine.getPStudentsNotFoundInS().stream()
-			.filter(student -> (schoolName == null || student.school.equals(schoolName)))
+			.filter(student -> (schoolName == null || student.school().equals(schoolName)))
 			.forEach(student -> createStudentRow(sheet, student));
 		sheet.createFreezePane(0, 1);
 		autoSizeColumns(sheet);
@@ -274,7 +274,7 @@ public class ReportBuilder {
 			createSectionRow(printer,
 				"Portal Students that do not appear in Scilympiad (just FYI - no action required):");
 			engine.getPStudentsNotFoundInS().stream()
-				.filter(student -> student.school.equals(schoolName))
+				.filter(student -> student.school().equals(schoolName))
 				.forEach(student -> createStudentRow(printer, student));
 
 			return file;
@@ -318,11 +318,11 @@ public class ReportBuilder {
 
 	private void createStudentRow(CSVPrinter printer, PortalStudent student) {
 		try {
-			printer.print(student.school);
-			printer.print(student.lastName);
-			printer.print(student.firstName);
-			printer.print(student.nickName);
-			printer.print(Integer.toString(student.grade));
+			printer.print(student.school());
+			printer.print(student.lastName());
+			printer.print(student.firstName());
+			printer.print(student.nickName());
+			printer.print(Integer.toString(student.grade()));
 			printer.println();
 		} catch (IOException ex) {
 			throw new UncheckedIOException(ex);
@@ -332,15 +332,15 @@ public class ReportBuilder {
 	private void createStudentRow(Sheet sheet, PortalStudent student) {
 		Row row = createNextRow(sheet);
 		createNextCell(row, CellType.STRING)
-			.setCellValue(student.school);
+			.setCellValue(student.school());
 		createNextCell(row, CellType.STRING)
-			.setCellValue(student.lastName);
+			.setCellValue(student.lastName());
 		createNextCell(row, CellType.STRING)
-			.setCellValue(student.firstName);
+			.setCellValue(student.firstName());
 		createNextCell(row, CellType.STRING)
-			.setCellValue(student.nickName);
+			.setCellValue(student.nickName());
 		createNextCell(row, CellType.NUMERIC)
-			.setCellValue(student.grade);
+			.setCellValue(student.grade());
 	}
 
 	private void setHeadings(Sheet sheet, String... headings) {

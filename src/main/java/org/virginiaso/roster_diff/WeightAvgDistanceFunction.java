@@ -11,12 +11,12 @@ public class WeightAvgDistanceFunction implements DistanceFunction {
 
 	@Override
 	public int applyAsInt(PortalStudent pStudent, ScilympiadStudent sStudent) {
-		int lastNameDist = LD.apply(pStudent.lastName, sStudent.lastName);
+		int lastNameDist = LD.apply(pStudent.lastName(), sStudent.lastName);
 		int firstNameDist = Math.min(
-			LD.apply(pStudent.firstName, sStudent.firstName),
-			LD.apply(pStudent.nickName, sStudent.firstName));
-		int gradeDist = Math.abs(pStudent.grade - sStudent.grade);
-		int schoolDist = LD.apply(pStudent.school, sStudent.school);
+			LD.apply(pStudent.firstName(), sStudent.firstName),
+			LD.apply(pStudent.nickName(), sStudent.firstName));
+		int gradeDist = Math.abs(pStudent.grade() - sStudent.grade);
+		int schoolDist = LD.apply(pStudent.school(), sStudent.school);
 		return LAST_WEIGHT * lastNameDist
 			+ FIRST_WEIGHT * firstNameDist
 			+ GRADE_WEIGHT * gradeDist

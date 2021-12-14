@@ -23,12 +23,12 @@ public class PortalRosterRetrieverFactory {
 		public JsonElement serialize(PortalStudent src, Type typeOfSrc,
 				JsonSerializationContext context) {
 			JsonObject name = new JsonObject();
-			name.add("first", new JsonPrimitive(src.firstName));
-			name.add("last", new JsonPrimitive(src.lastName));
+			name.add("first", new JsonPrimitive(src.firstName()));
+			name.add("last", new JsonPrimitive(src.lastName()));
 
 			JsonObject school = new JsonObject();
 			school.add("id", new JsonPrimitive("unknown"));
-			school.add("identifier", new JsonPrimitive(src.school));
+			school.add("identifier", new JsonPrimitive(src.school()));
 
 			JsonArray schoolArray = new JsonArray();
 			schoolArray.add(school);
@@ -36,9 +36,9 @@ public class PortalRosterRetrieverFactory {
 			JsonObject result = new JsonObject();
 			result.add("id", new JsonPrimitive("unknown"));
 			result.add("field_52", name);
-			result.add("field_70", new JsonPrimitive(src.nickName));
+			result.add("field_70", new JsonPrimitive(src.nickName()));
 			result.add("field_56", schoolArray);
-			result.add("field_90", new JsonPrimitive(src.grade));
+			result.add("field_90", new JsonPrimitive(src.grade()));
 			return result;
 		}
 
