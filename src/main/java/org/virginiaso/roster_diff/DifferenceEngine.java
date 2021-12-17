@@ -13,14 +13,16 @@ public class DifferenceEngine {
 	private static final int DISTANCE_THRESHOLD = 4;
 
 	private final Set<Student> pStudents;
-	private final Set<ScilympiadStudent> sStudents;
+	private final Set<Student> sStudents;
 	private final List<Match> matches;
 	private final Set<Student> pStudentsNotFoundInS;
-	private final Set<ScilympiadStudent> sStudentsNotFoundInP;
-	private final Map<ScilympiadStudent, Map<Integer, List<Student>>> results;
+	private final Set<Student> sStudentsNotFoundInP;
+
+	// Map of Scilympiad students to a map of distance to list of Portal students
+	private final Map<Student, Map<Integer, List<Student>>> results;
 
 	public static DifferenceEngine compare(List<Match> manualMatches,
-			List<Student> pStudents, List<ScilympiadStudent> sStudents,
+			List<Student> pStudents, List<Student> sStudents,
 			DistanceFunction distanceFunction) {
 		Stopwatch timer = new Stopwatch();
 		DifferenceEngine engine = new DifferenceEngine(manualMatches, pStudents, sStudents);
@@ -30,7 +32,7 @@ public class DifferenceEngine {
 	}
 
 	private DifferenceEngine(List<Match> manualMatches, List<Student> pStudentList,
-			List<ScilympiadStudent> sStudentList) {
+			List<Student> sStudentList) {
 		pStudents = new TreeSet<>(pStudentList);
 		sStudents = new TreeSet<>(sStudentList);
 
@@ -44,7 +46,7 @@ public class DifferenceEngine {
 				.filter(match.getPStudent()::equals)
 				.findFirst()
 				.orElse(null);
-			ScilympiadStudent sStudent = sStudents.stream()
+			Student sStudent = sStudents.stream()
 				.filter(match.getSStudent()::equals)
 				.findFirst()
 				.orElse(null);
@@ -71,7 +73,7 @@ public class DifferenceEngine {
 
 	private void compare(DistanceFunction distanceFunction) {
 		for (Student pStudent : pStudents) {
-			for (ScilympiadStudent sStudent : sStudents) {
+			for (Student sStudent : sStudents) {
 				boolean pairIsMarkedAsDifferent = matches.stream()
 					.filter(match -> Verdict.DIFFERENT.equals(match.getVerdict()))
 					.filter(match -> match.getPStudent().equals(pStudent))
@@ -89,8 +91,8 @@ public class DifferenceEngine {
 		}
 
 		// Compile a list of exact matches:
-		for (Map.Entry<ScilympiadStudent, Map<Integer, List<Student>>> entry : results.entrySet()) {
-			ScilympiadStudent sStudent = entry.getKey();
+		for (Map.Entry<Student, Map<Integer, List<Student>>> entry : results.entrySet()) {
+			Student sStudent = entry.getKey();
 			List<Student> exactMatches = entry.getValue().get(0);
 			if (exactMatches != null) {
 				exactMatches.stream()
@@ -120,17 +122,17 @@ public class DifferenceEngine {
 		}
 
 		// Remove empty entries in the results data structure:
-		for (Map.Entry<ScilympiadStudent, Map<Integer, List<Student>>> entry : results.entrySet()) {
+		for (Map.Entry<Student, Map<Integer, List<Student>>> entry : results.entrySet()) {
 			List<Integer> keysToRemove = entry.getValue().entrySet().stream()
 				.filter(innerEntry -> innerEntry.getValue().isEmpty())
 				.map(Map.Entry::getKey)
 				.collect(Collectors.toList());
 			keysToRemove.forEach(key -> entry.getValue().remove(key));
 		}
-		Iterator<Map.Entry<ScilympiadStudent, Map<Integer, List<Student>>>> it
+		Iterator<Map.Entry<Student, Map<Integer, List<Student>>>> it
 			= results.entrySet().iterator();
 		while (it.hasNext()) {
-			Map.Entry<ScilympiadStudent, Map<Integer, List<Student>>> entry = it.next();
+			Map.Entry<Student, Map<Integer, List<Student>>> entry = it.next();
 			if (entry.getValue().isEmpty()) {
 				it.remove();
 			}
@@ -155,7 +157,7 @@ public class DifferenceEngine {
 		return pStudentsNotFoundInS;
 	}
 
-	public Set<ScilympiadStudent> getSStudentsNotFoundInP() {
+	public Set<Student> getSStudentsNotFoundInP() {
 		return sStudentsNotFoundInP;
 	}
 
@@ -165,7 +167,7 @@ public class DifferenceEngine {
 	 * @return A map of s-student -> map of distance -> list of p-students at that
 	 *         distance from the s-student
 	 */
-	public Map<ScilympiadStudent, Map<Integer, List<Student>>> getResults() {
+	public Map<Student, Map<Integer, List<Student>>> getResults() {
 		return results;
 	}
 

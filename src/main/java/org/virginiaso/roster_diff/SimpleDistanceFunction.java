@@ -2,11 +2,12 @@ package org.virginiaso.roster_diff;
 
 public class SimpleDistanceFunction implements DistanceFunction {
 	@Override
-	public int applyAsInt(Student pStudent, ScilympiadStudent sStudent) {
-		if (pStudent.lastName().equalsIgnoreCase(sStudent.lastName)
-			&& (pStudent.firstName().equalsIgnoreCase(sStudent.firstName)
-				|| pStudent.nickName().equalsIgnoreCase(sStudent.firstName))
-			&& pStudent.grade() == sStudent.grade) {
+	public int applyAsInt(Student lhsStudent, Student rhsStudent) {
+		if (lhsStudent.lastName().equalsIgnoreCase(rhsStudent.lastName())
+			&& (lhsStudent.firstName().equalsIgnoreCase(rhsStudent.firstName())
+				|| lhsStudent.nickName().equalsIgnoreCase(rhsStudent.firstName())
+				|| rhsStudent.nickName().equalsIgnoreCase(lhsStudent.firstName()))
+			&& lhsStudent.grade() == rhsStudent.grade()) {
 			return 0;
 		} else {
 			return Integer.MAX_VALUE;

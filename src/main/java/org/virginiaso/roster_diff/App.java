@@ -39,7 +39,7 @@ public class App {
 			.collect(Collectors.groupingBy(coach -> School.normalize(coach.school())));
 		List<Match> matches = Match.parse(masterReportFile);
 		List<Student> pStudents = StudentRetrieverFactory.create().readLatestReportFile();
-		List<ScilympiadStudent> sStudents = ScilympiadStudent.readLatestRosterFile();
+		List<Student> sStudents = ScilympiadParser.readLatestRosterFile();
 
 		checkForMissingSchoolsInCoachesFile(schoolToCoachsMap.keySet(), pStudents, sStudents);
 
@@ -76,13 +76,13 @@ public class App {
 	}
 
 	private void checkForMissingSchoolsInCoachesFile(Set<String> schools,
-			List<Student> pStudents, List<ScilympiadStudent> sStudents) {
+			List<Student> pStudents, List<Student> sStudents) {
 		Set<String> schoolNames = new TreeSet<>();
 		pStudents.stream()
 			.map(pStudent -> pStudent.school())
 			.forEach(schoolNames::add);
 		sStudents.stream()
-			.map(sStudent -> sStudent.school)
+			.map(sStudent -> sStudent.school())
 			.forEach(schoolNames::add);
 		List<String> unknownSchools = schoolNames.stream()
 			.filter(schoolName -> schools.stream().noneMatch(

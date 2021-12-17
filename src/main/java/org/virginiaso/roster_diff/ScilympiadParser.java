@@ -13,14 +13,12 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Objects;
 import java.util.function.BiPredicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import org.apache.commons.lang3.builder.CompareToBuilder;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Row.MissingCellPolicy;
@@ -28,7 +26,7 @@ import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
-public class ScilympiadStudent implements Comparable<ScilympiadStudent> {
+public class ScilympiadParser {
 	static enum Column {
 		TEAM_NUMBER,
 		STUDENT_NAME,
@@ -45,12 +43,9 @@ public class ScilympiadStudent implements Comparable<ScilympiadStudent> {
 	private static final Pattern GRADE_PATTERN = Pattern.compile(
 		"^([0-9]+)\\s*((st)|(nd)|(rd)|(th))?$", Pattern.CASE_INSENSITIVE);
 
-	public final String school;
-	public final String firstName;
-	public final String lastName;
-	public final int grade;
+	private ScilympiadParser() {}	// Prevents Instantiation
 
-	public static List<ScilympiadStudent> readLatestRosterFile()
+	public static List<Student> readLatestRosterFile()
 			throws IOException {
 		var props = Util.loadPropertiesFromResource(Util.CONFIGURATION_RESOURCE);
 		var siteName = props.getProperty("scilympiad.site");
@@ -60,7 +55,7 @@ public class ScilympiadStudent implements Comparable<ScilympiadStudent> {
 			.map(String::strip)
 			.map(suffix -> getLatestReportFileForSuffix(reportDir, suffix))
 			.filter(file -> file != null)
-			.map(ScilympiadStudent::parse)
+			.map(ScilympiadParser::parse)
 			.flatMap(List::stream)
 			.collect(Collectors.toUnmodifiableList());
 	}
@@ -80,8 +75,8 @@ public class ScilympiadStudent implements Comparable<ScilympiadStudent> {
 		}
 	}
 
-	public static List<ScilympiadStudent> parse(File scilympiadStudentFile) {
-		List<ScilympiadStudent> result = new ArrayList<>();
+	private static List<Student> parse(File scilympiadStudentFile) {
+		List<Student> result = new ArrayList<>();
 		Stopwatch timer = new Stopwatch();
 
 		try (
@@ -111,9 +106,8 @@ public class ScilympiadStudent implements Comparable<ScilympiadStudent> {
 					throw new ParseException("Unexpected value '%1$s' in cell A%2$d",
 						firstColumn, rowNum);
 				} else {
-					result.add(new ScilympiadStudent(currentSchool,
-						getCellValue(row, Column.STUDENT_NAME),
-						getCellValue(row, Column.GRADE), rowNum));
+					result.add(newStudent(getCellValue(row, Column.STUDENT_NAME),
+						currentSchool, getCellValue(row, Column.GRADE), rowNum));
 				}
 			}
 		} catch (IOException ex) {
@@ -136,6 +130,27 @@ public class ScilympiadStudent implements Comparable<ScilympiadStudent> {
 		}
 	}
 
+	private static Student newStudent(String fullName, String school, String gradeStr, int rowNum) {
+		String[] pieces = splitFullName(fullName);
+		if (pieces.length != 2) {
+			throw new ParseException("Name '%1$s' in row %2$d is not in last, first format",
+				fullName, rowNum);
+		}
+
+		var grade = -1;
+		if ("K".equalsIgnoreCase(gradeStr)) {
+			grade = 0;
+		} else {
+			String gradeNumStr = getMatchedPortion(gradeStr, GRADE_PATTERN);
+			if (gradeNumStr == null) {
+				throw new ParseException("Grade '%1$s' in row %2$d is malformed", gradeStr, rowNum);
+			}
+			grade = Integer.parseInt(gradeNumStr);
+		}
+
+		return new Student(pieces[1], pieces[0], "", School.normalize(school), grade);
+	}
+
 	static String getMatchedPortion(String str, Pattern pattern) {
 		Matcher m = pattern.matcher(str);
 		return m.matches()
@@ -143,73 +158,11 @@ public class ScilympiadStudent implements Comparable<ScilympiadStudent> {
 			: null;
 	}
 
-	private ScilympiadStudent(String school, String fullName, String grade, int rowNum) {
-		this.school = School.normalize(school);
-
-		String[] pieces = splitFullName(fullName);
-		if (pieces.length == 2) {
-			firstName = pieces[1].toLowerCase();
-			lastName = pieces[0].toLowerCase();
-		} else {
-			throw new ParseException("Name '%1$s' in row %2$d is not in last, first format",
-				fullName, rowNum);
-		}
-
-		if ("K".equalsIgnoreCase(grade)) {
-			this.grade = 0;
-		} else {
-			String gradeNumStr = getMatchedPortion(grade, GRADE_PATTERN);
-			if (gradeNumStr == null) {
-				throw new ParseException("Grade '%1$s' in row %2$d is malformed", grade, rowNum);
-			}
-			this.grade = Integer.parseInt(gradeNumStr);
-		}
-	}
-
-	ScilympiadStudent(String school, String lastName, String firstName, int grade, int rowNum) {
-		this.school = School.normalize(school);
-		this.lastName = Util.normalizeSpace(lastName).toLowerCase();
-		this.firstName = Util.normalizeSpace(firstName).toLowerCase();
-		this.grade = grade;
-	}
-
 	private static String[] splitFullName(String fullName) {
 		String[] pieces = fullName.split(",", 2);
 		for (int i = 0; i < pieces.length; ++i) {
-			pieces[i] = pieces[i].strip();
+			pieces[i] = pieces[i].strip().toLowerCase();
 		}
 		return pieces;
-	}
-
-	@Override
-	public int hashCode() {
-		return Objects.hash(school, lastName, firstName, grade);
-	}
-
-	@Override
-	public boolean equals(Object rhs) {
-		if (this == rhs) {
-			return true;
-		} else if (!(rhs instanceof ScilympiadStudent rhsAsSS)) {
-			return false;
-		} else {
-			return this.compareTo(rhsAsSS) == 0;
-		}
-	}
-
-	@Override
-	public int compareTo(ScilympiadStudent rhs) {
-		return new CompareToBuilder()
-			.append(this.school, rhs.school)
-			.append(this.lastName, rhs.lastName)
-			.append(this.firstName, rhs.firstName)
-			.append(this.grade, rhs.grade)
-			.toComparison();
-	}
-
-	@Override
-	public String toString() {
-		return "ScilympiadStudent [grade=%d, last=%s, first=%s, school=%s]".formatted(
-			grade, lastName, firstName, school);
 	}
 }

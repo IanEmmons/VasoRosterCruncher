@@ -21,7 +21,7 @@ dependencies {
 	implementation 'org.apache.poi:poi-ooxml:5.0.0'
 	implementation 'org.jsoup:jsoup:1.14.2'
 
-	testImplementation 'org.junit.jupiter:junit-jupiter:5.8.1'
+	testImplementation 'org.junit.jupiter:junit-jupiter:5.8.2'
 }
 
 tasks.withType(JavaCompile) {
@@ -44,13 +44,6 @@ task getPortalRoster(type: JavaExec) {
 	mainClass = 'org.virginiaso.roster_diff.PortalRetriever'
 	classpath = sourceSets.main.runtimeClasspath
 	systemProperty 'portal.password', "$portalPassword"
-}
-
-task getScilympiadRoster(type: JavaExec) {
-	dependsOn 'classes'
-	mainClass = 'org.virginiaso.roster_diff.ScilympiadRetriever'
-	classpath = sourceSets.main.runtimeClasspath
-	systemProperty 'scilympiad.password', "$scilympiadPassword"
 }
 
 task sendTestEmail(type: JavaExec) {

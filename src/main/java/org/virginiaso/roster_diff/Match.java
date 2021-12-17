@@ -27,11 +27,11 @@ public class Match {
 		VERDICT
 	}
 
-	private final ScilympiadStudent sStudent;
+	private final Student sStudent;
 	private final Student pStudent;
 	private final Verdict verdict;
 
-	Match(ScilympiadStudent sStudent, Student pStudent, Verdict verdict) {
+	Match(Student sStudent, Student pStudent, Verdict verdict) {
 		this.sStudent = sStudent;
 		this.pStudent = pStudent;
 		this.verdict = verdict;
@@ -65,8 +65,8 @@ public class Match {
 			if (iter.hasNext()) {
 				iter.next();	// skip the column headings
 			}
-			ScilympiadStudent currentSStudent = null;
-			for (int rowNum = 2; iter.hasNext(); ++rowNum) {
+			Student currentSStudent = null;
+			while (iter.hasNext()) {
 				Row row = iter.next();
 				String source = getStringCellValue(row, Column.SOURCE);
 				String school = getStringCellValue(row, Column.SCHOOL);
@@ -75,8 +75,7 @@ public class Match {
 				String nickName = getStringCellValue(row, Column.NICKNAME);
 				int grade = getNumericCellValue(row, Column.GRADE);
 				if (ReportBuilder.SCILYMPIAD_ROW_LABEL.equalsIgnoreCase(source)) {
-					currentSStudent = new ScilympiadStudent(school, lastName, firstName,
-						grade, rowNum);
+					currentSStudent = new Student(firstName, lastName, nickName, school, grade);
 				} else if (ReportBuilder.PORTAL_ROW_LABEL.equalsIgnoreCase(source)) {
 					Student pStudent = new Student(firstName, lastName, nickName,
 						school, grade);
@@ -112,7 +111,7 @@ public class Match {
 			: (int) Math.round(cell.getNumericCellValue());
 	}
 
-	public ScilympiadStudent getSStudent() {
+	public Student getSStudent() {
 		return sStudent;
 	}
 

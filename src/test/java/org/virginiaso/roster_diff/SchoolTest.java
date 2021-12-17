@@ -43,10 +43,10 @@ public class SchoolTest {
 			}
 			while (iter.hasNext()) {
 				Row row = iter.next();
-				String firstColumn = ScilympiadStudent.getCellValue(row,
-					ScilympiadStudent.Column.TEAM_NUMBER);
-				String school = ScilympiadStudent.getMatchedPortion(firstColumn,
-					ScilympiadStudent.SCHOOL_PATTERN);
+				String firstColumn = ScilympiadParser.getCellValue(row,
+					ScilympiadParser.Column.TEAM_NUMBER);
+				String school = ScilympiadParser.getMatchedPortion(firstColumn,
+					ScilympiadParser.SCHOOL_PATTERN);
 				if (!firstColumn.isEmpty() && school != null) {
 					rawSchools.add(school);
 				}

@@ -81,7 +81,7 @@ public class ReportBuilder {
 			}
 		} else {
 			long numSStudentsNotFoundInP = engine.getSStudentsNotFoundInP().stream()
-				.filter(student -> student.school.equals(schoolName))
+				.filter(student -> student.school().equals(schoolName))
 				.count();
 			if (numSStudentsNotFoundInP <= 0) {
 				return;
@@ -101,10 +101,10 @@ public class ReportBuilder {
 		/*
 		 * First, we create a new matches data structure that combines the near-matches
 		 * found by the difference engine with the manually adjudicated matches from the
-		 * master report.
+		 * master report. The data structure here is a map of Scilympiad students to a
+		 * map of distance to list of Portal students.
 		 */
-		Map<ScilympiadStudent, Map<Integer, List<Student>>> matchesForDisplay
-			= new TreeMap<>();
+		Map<Student, Map<Integer, List<Student>>> matchesForDisplay = new TreeMap<>();
 		matchesForDisplay.putAll(engine.getResults());
 		engine.getMatches().stream()
 			.filter(match -> match.getVerdict() != Verdict.EXACT_MATCH)
@@ -121,7 +121,7 @@ public class ReportBuilder {
 		boolean isEvenSStudentIndex = false;
 		List<Integer> portalRowNumbers = new ArrayList<>();
 		for (var entry : matchesForDisplay.entrySet()) {
-			ScilympiadStudent sStudent = entry.getKey();
+			Student sStudent = entry.getKey();
 			Map<Integer, List<Student>> matches = entry.getValue();
 			createNearMatchRowScilympiad(sheet, sStudent, matches, styles,
 				isEvenSStudentIndex, portalRowNumbers);
@@ -159,7 +159,7 @@ public class ReportBuilder {
 		return result;
 	}
 
-	private void createNearMatchRowScilympiad(Sheet sheet, ScilympiadStudent sStudent,
+	private void createNearMatchRowScilympiad(Sheet sheet, Student sStudent,
 			Map<Integer, List<Student>> matches, EnumMap<Style, CellStyle> styles,
 			boolean isEvenSStudentIndex, List<Integer> portalRowNumbers) {
 		Row row = createNextRow(sheet);
@@ -173,14 +173,14 @@ public class ReportBuilder {
 			.setCellValue(SCILYMPIAD_ROW_LABEL);
 		createNextCell(row, CellType.BLANK, subsequentStyle);
 		createNextCell(row, CellType.STRING, subsequentStyle)
-			.setCellValue(sStudent.school);
+			.setCellValue(sStudent.school());
 		createNextCell(row, CellType.STRING, subsequentStyle)
-			.setCellValue(sStudent.lastName);
+			.setCellValue(sStudent.lastName());
 		createNextCell(row, CellType.STRING, subsequentStyle)
-			.setCellValue(sStudent.firstName);
+			.setCellValue(sStudent.firstName());
 		createNextCell(row, CellType.BLANK, subsequentStyle);
 		createNextCell(row, CellType.NUMERIC, subsequentStyle)
-			.setCellValue(sStudent.grade);
+			.setCellValue(sStudent.grade());
 		createNextCell(row, CellType.BLANK, verdictStyle);
 
 		matches.entrySet().stream().forEach(
@@ -245,7 +245,7 @@ public class ReportBuilder {
 		Sheet sheet = workbook.createSheet(S_NOT_P_SHEET_TITLE);
 		setHeadings(sheet, HEADINGS_FOR_STUDENTS_IN_ONLY_ONE_SYSTEM);
 		engine.getSStudentsNotFoundInP().stream()
-			.filter(student -> (schoolName == null || student.school.equals(schoolName)))
+			.filter(student -> (schoolName == null || student.school().equals(schoolName)))
 			.forEach(student -> createScilympiadStudentRow(sheet, student));
 		sheet.createFreezePane(0, 1);
 		autoSizeColumns(sheet);
@@ -267,7 +267,7 @@ public class ReportBuilder {
 			createSectionRow(printer,
 				"Scilympiad Students with no Permission in the Portal:");
 			engine.getSStudentsNotFoundInP().stream()
-				.filter(student -> student.school.equals(schoolName))
+				.filter(student -> student.school().equals(schoolName))
 				.forEach(student -> createScilympiadStudentRow(printer, student));
 
 			printer.println();
@@ -290,30 +290,30 @@ public class ReportBuilder {
 		printer.println();
 	}
 
-	private void createScilympiadStudentRow(CSVPrinter printer, ScilympiadStudent student) {
+	private void createScilympiadStudentRow(CSVPrinter printer, Student student) {
 		try {
-			printer.print(student.school);
-			printer.print(student.lastName);
-			printer.print(student.firstName);
+			printer.print(student.school());
+			printer.print(student.lastName());
+			printer.print(student.firstName());
 			printer.print("");
-			printer.print(Integer.toString(student.grade));
+			printer.print(Integer.toString(student.grade()));
 			printer.println();
 		} catch (IOException ex) {
 			throw new UncheckedIOException(ex);
 		}
 	}
 
-	private void createScilympiadStudentRow(Sheet sheet, ScilympiadStudent student) {
+	private void createScilympiadStudentRow(Sheet sheet, Student student) {
 		Row row = createNextRow(sheet);
 		createNextCell(row, CellType.STRING)
-			.setCellValue(student.school);
+			.setCellValue(student.school());
 		createNextCell(row, CellType.STRING)
-			.setCellValue(student.lastName);
+			.setCellValue(student.lastName());
 		createNextCell(row, CellType.STRING)
-			.setCellValue(student.firstName);
+			.setCellValue(student.firstName());
 		createNextCell(row, CellType.BLANK);
 		createNextCell(row, CellType.NUMERIC)
-			.setCellValue(student.grade);
+			.setCellValue(student.grade());
 	}
 
 	private void createPortalStudentRow(CSVPrinter printer, Student student) {
