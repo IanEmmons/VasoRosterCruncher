@@ -11,8 +11,8 @@ import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.Iterator;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.BiPredicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -22,7 +22,6 @@ import java.util.stream.Stream;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Row.MissingCellPolicy;
-import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
@@ -32,6 +31,24 @@ public class ScilympiadParser {
 		STUDENT_NAME,
 		LOGIN_ID,
 		GRADE
+	}
+
+	private static class Name {
+		public final String last;
+		public final String first;
+
+		public Name(String fullName, int rowNum) {
+			String[] pieces = fullName.split(",", 2);
+			for (int i = 0; i < pieces.length; ++i) {
+				pieces[i] = Util.normalizeSpace(pieces[i]);
+			}
+			if (pieces.length != 2) {
+				throw new ParseException("Name '%1$s' in row %2$d is not in last, first format",
+					fullName, rowNum);
+			}
+			last = pieces[0];
+			first = pieces[1];
+		}
 	}
 
 	static final Pattern SCHOOL_PATTERN = Pattern.compile(
@@ -77,37 +94,36 @@ public class ScilympiadParser {
 
 	private static List<Student> parse(File scilympiadStudentFile) {
 		List<Student> result = new ArrayList<>();
-		Stopwatch timer = new Stopwatch();
+		var timer = new Stopwatch();
 
 		try (
 			InputStream is = new FileInputStream(scilympiadStudentFile);
 			Workbook workbook = new XSSFWorkbook(is);
 		) {
-			String currentSchool = "";
-			Sheet sheet = workbook.getSheetAt(0);
-
-			Iterator<Row> iter = sheet.iterator();
-			if (iter.hasNext()) {
-				iter.next();	// skip the column headings
+			var currentSchool = "";
+			var rowIter = workbook.getSheetAt(0).iterator();
+			if (rowIter.hasNext()) {
+				rowIter.next();	// skip the column headings
 			}
-			for (int rowNum = 2; iter.hasNext(); ++rowNum) {
-				Row row = iter.next();
-				String firstColumn = getCellValue(row, Column.TEAM_NUMBER);
-				String school = getMatchedPortion(firstColumn, SCHOOL_PATTERN);
-				String teamName = getMatchedPortion(firstColumn, TEAM_NAME_PATTERN);
-				String teamNumber = getMatchedPortion(firstColumn, TEAM_NUMBER_PATTERN);
+			for (int rowNum = 2; rowIter.hasNext(); ++rowNum) {
+				var row = rowIter.next();
+				var firstColumn = getCellValue(row, Column.TEAM_NUMBER);
+				var school = getMatchedPortion(firstColumn, SCHOOL_PATTERN);
+				var teamName = getMatchedPortion(firstColumn, TEAM_NAME_PATTERN);
+				var teamNumber = getMatchedPortion(firstColumn, TEAM_NUMBER_PATTERN);
 				if (firstColumn.isEmpty()) {
 					// Do nothing
-				} else if (school != null) {
-					currentSchool = school;
-				} else if (teamName != null) {
+				} else if (school.isPresent()) {
+					currentSchool = SchoolName.normalize(school.get());
+				} else if (teamName.isPresent()) {
 					// Do nothing
-				} else if (teamNumber == null) {
+				} else if (teamNumber.isEmpty()) {
 					throw new ParseException("Unexpected value '%1$s' in cell A%2$d",
 						firstColumn, rowNum);
 				} else {
-					result.add(newStudent(getCellValue(row, Column.STUDENT_NAME),
-						currentSchool, getCellValue(row, Column.GRADE), rowNum));
+					var name = new Name(getCellValue(row, Column.STUDENT_NAME), rowNum);
+					var grade = parseGrade(getCellValue(row, Column.GRADE), rowNum);
+					result.add(new Student(name.first, name.last, "", currentSchool, grade));
 				}
 			}
 		} catch (IOException ex) {
@@ -130,39 +146,19 @@ public class ScilympiadParser {
 		}
 	}
 
-	private static Student newStudent(String fullName, String school, String gradeStr, int rowNum) {
-		String[] pieces = splitFullName(fullName);
-		if (pieces.length != 2) {
-			throw new ParseException("Name '%1$s' in row %2$d is not in last, first format",
-				fullName, rowNum);
-		}
-
-		var grade = -1;
-		if ("K".equalsIgnoreCase(gradeStr)) {
-			grade = 0;
-		} else {
-			String gradeNumStr = getMatchedPortion(gradeStr, GRADE_PATTERN);
-			if (gradeNumStr == null) {
-				throw new ParseException("Grade '%1$s' in row %2$d is malformed", gradeStr, rowNum);
-			}
-			grade = Integer.parseInt(gradeNumStr);
-		}
-
-		return new Student(pieces[1], pieces[0], "", School.normalize(school), grade);
+	private static int parseGrade(String gradeStr, int rowNum) {
+		return "K".equalsIgnoreCase(gradeStr)
+			? 0
+			: getMatchedPortion(gradeStr, GRADE_PATTERN)
+				.map(Integer::parseInt)
+				.orElseThrow(() -> new ParseException(
+					"Grade '%1$s' in row %2$d is malformed", gradeStr, rowNum));
 	}
 
-	static String getMatchedPortion(String str, Pattern pattern) {
+	static Optional<String> getMatchedPortion(String str, Pattern pattern) {
 		Matcher m = pattern.matcher(str);
 		return m.matches()
-			? m.group(1)
-			: null;
-	}
-
-	private static String[] splitFullName(String fullName) {
-		String[] pieces = fullName.split(",", 2);
-		for (int i = 0; i < pieces.length; ++i) {
-			pieces[i] = pieces[i].strip().toLowerCase();
-		}
-		return pieces;
+			? Optional.of(m.group(1))
+			: Optional.empty();
 	}
 }

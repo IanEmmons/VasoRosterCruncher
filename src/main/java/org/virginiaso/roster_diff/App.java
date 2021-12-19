@@ -36,7 +36,7 @@ public class App {
 	private void run() throws IOException, ParseException {
 		List<Coach> coaches = CoachRetrieverFactory.create().readLatestReportFile();
 		Map<String, List<Coach>> schoolToCoachsMap = coaches.stream()
-			.collect(Collectors.groupingBy(coach -> School.normalize(coach.school())));
+			.collect(Collectors.groupingBy(Coach::school));
 		List<Match> matches = Match.parse(masterReportFile);
 		List<Student> pStudents = StudentRetrieverFactory.create().readLatestReportFile();
 		List<Student> sStudents = ScilympiadParser.readLatestRosterFile();
