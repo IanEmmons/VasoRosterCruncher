@@ -5,6 +5,10 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.UncheckedIOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.List;
@@ -13,8 +17,6 @@ import java.util.Objects;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 
-import org.apache.commons.csv.CSVFormat;
-import org.apache.commons.csv.CSVPrinter;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.CellType;
@@ -39,13 +41,26 @@ public class ReportBuilder {
 	static final String PORTAL_ROW_LABEL = "Portal:";
 	private static final int VERDICT_COLUMN_NUMBER = 7;
 	private static final String[] VERDICT_COLUMN_VALUES = {"—", "Different", "Same"};
+	private static final String EMAIL_SUBJECT_FORMAT = "Missing VASO Student Permissions at %1$s";
+	private static final String EMAIL_BODY_RESOURCE_NAME = "EmailBody.html";
+	private static final String SCILYMPIAD_STUDENT_ROW_FORMAT = """
+				<tr>
+					<td>%1$s</td>
+					<td>%2$s</td>
+					<td>%3$d</td>
+				</tr>
+		""";
+	private static final String PORTAL_STUDENT_ROW_FORMAT = """
+				<tr>
+					<td>%1$s</td>
+					<td>%2$s</td>
+					<td>%3$s</td>
+					<td>%4$d</td>
+				</tr>
+		""";
 	private static final String[] HEADINGS_FOR_STUDENTS_IN_ONLY_ONE_SYSTEM = {
 		"School", "Last Name", "First Name", "Nickname", "Grade"
 	};
-	private static final CSVFormat FORMAT = CSVFormat.DEFAULT.builder()
-		.setHeader(HEADINGS_FOR_STUDENTS_IN_ONLY_ONE_SYSTEM)
-		.setTrim(true)
-		.build();
 
 	private static enum Style {
 		WHITE, GRAY,
@@ -80,19 +95,20 @@ public class ReportBuilder {
 				throw new UncheckedIOException(ex);
 			}
 		} else {
-			long numSStudentsNotFoundInP = engine.getSStudentsNotFoundInP().stream()
+			var numSStudentsNotFoundInP = engine.getSStudentsNotFoundInP().stream()
 				.filter(student -> student.school().equals(schoolName))
 				.count();
 			if (numSStudentsNotFoundInP <= 0) {
 				return;
 			}
 
-			File report = createSchoolReport(schoolName);
+			var emailBody = createSchoolReport(schoolName);
 			if (sendEmail) {
-				List<String> recipients = coaches.stream()
+				var emailSubject = EMAIL_SUBJECT_FORMAT.formatted(schoolName);
+				var recipients = coaches.stream()
 					.map(Coach::prettyEmail)
 					.collect(Collectors.toUnmodifiableList());
-				emailer.send(report, recipients);
+				emailer.send(emailSubject, emailBody, null, recipients);
 			}
 		}
 	}
@@ -115,7 +131,7 @@ public class ReportBuilder {
 
 		EnumMap<Style, CellStyle> styles = createMatchesSheetStyles(workbook);
 
-		Sheet sheet = workbook.createSheet(MATCHES_SHEET_TITLE);
+		var sheet = workbook.createSheet(MATCHES_SHEET_TITLE);
 		setHeadings(sheet, "Source", "Distance", "School", "Last Name", "First Name",
 			"Nickname", "Grade", "Verdict");
 		boolean isEvenSStudentIndex = false;
@@ -261,43 +277,31 @@ public class ReportBuilder {
 		autoSizeColumns(sheet);
 	}
 
-	private File createSchoolReport(String schoolName) {
-		File file = getReportFile(schoolName);
-		try (CSVPrinter printer = FORMAT.print(file, Util.CHARSET)) {
-			createSectionRow(printer,
-				"Scilympiad Students with no Permission in the Portal:");
-			engine.getSStudentsNotFoundInP().stream()
-				.filter(student -> student.school().equals(schoolName))
-				.forEach(student -> createScilympiadStudentRow(printer, student));
+	private String createSchoolReport(String schoolName) {
+		var props = Util.loadPropertiesFromResource(Util.CONFIGURATION_RESOURCE);
+		var appName = props.getProperty("portal.application.name");
+		var permissionUrl = props.getProperty("portal.%1$s.permission.url".formatted(appName));
 
-			printer.println();
-			createSectionRow(printer,
-				"Portal Students that do not appear in Scilympiad (just FYI - no action required):");
-			engine.getPStudentsNotFoundInS().stream()
-				.filter(student -> student.school().equals(schoolName))
-				.forEach(student -> createPortalStudentRow(printer, student));
+		var sStudentsNotInP = engine.getSStudentsNotFoundInP().stream()
+			.filter(student -> student.school().equals(schoolName))
+			.map(student -> SCILYMPIAD_STUDENT_ROW_FORMAT.formatted(
+				student.lastName(), student.firstName(), student.grade()))
+			.collect(Collectors.joining());
+		var pStudentsNotInS = engine.getPStudentsNotFoundInS().stream()
+			.filter(student -> student.school().equals(schoolName))
+			.map(student -> PORTAL_STUDENT_ROW_FORMAT.formatted(
+				student.lastName(), student.firstName(), student.nickName(), student.grade()))
+			.collect(Collectors.joining());
 
-			return file;
-		} catch (IOException ex) {
-			throw new UncheckedIOException(ex);
-		}
-	}
-
-	private void createSectionRow(CSVPrinter printer, String sectionTitle) throws IOException {
-		printer.println();
-		printer.print(sectionTitle);
-		printer.println();
-		printer.println();
-	}
-
-	private void createScilympiadStudentRow(CSVPrinter printer, Student student) {
 		try {
-			printer.print(student.school());
-			printer.print(student.lastName());
-			printer.print(student.firstName());
-			printer.print("");
-			printer.print(Integer.toString(student.grade()));
-			printer.println();
+			var emailBody = Util.getResourceAsString(EMAIL_BODY_RESOURCE_NAME)
+				.formatted(schoolName, permissionUrl, sStudentsNotInP, pStudentsNotInS);
+
+			Path file = getReportFile(schoolName).toPath();
+			Files.writeString(file, emailBody, StandardCharsets.UTF_8,
+				StandardOpenOption.CREATE_NEW);
+
+			return emailBody;
 		} catch (IOException ex) {
 			throw new UncheckedIOException(ex);
 		}
@@ -314,19 +318,6 @@ public class ReportBuilder {
 		createNextCell(row, CellType.BLANK);
 		createNextCell(row, CellType.NUMERIC)
 			.setCellValue(student.grade());
-	}
-
-	private void createPortalStudentRow(CSVPrinter printer, Student student) {
-		try {
-			printer.print(student.school());
-			printer.print(student.lastName());
-			printer.print(student.firstName());
-			printer.print(student.nickName());
-			printer.print(Integer.toString(student.grade()));
-			printer.println();
-		} catch (IOException ex) {
-			throw new UncheckedIOException(ex);
-		}
 	}
 
 	private void createPortalStudentRow(Sheet sheet, Student student) {
@@ -388,7 +379,7 @@ public class ReportBuilder {
 				.filter(ch -> ch != '.')
 				.map(ch -> (ch == ' ') ? '-' : ch)
 				.forEach(ch -> buffer.append((char) ch));
-			return new File(reportDir, "%1$s.csv".formatted(buffer));
+			return new File(reportDir, "%1$s.html".formatted(buffer));
 		}
 	}
 }
