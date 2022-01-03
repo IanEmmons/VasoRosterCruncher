@@ -1,38 +1,33 @@
 package org.virginiaso.roster_diff;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 
 public class SchoolName {
-	static final CSVFormat FORMAT = CSVFormat.DEFAULT.builder()
-		.setHeader()
-		.setIgnoreEmptyLines(true)
-		.setTrim(true)
-		.build();
-	static final String TRANSLATION_RESOURCE = "school-names.csv";
+	static final String RESOURCE_NAME = "school-names.csv";
+	private static final String SCILYMPIAD_NAME_COLUMN = "ScilympiadName";
+	static final String CANONICAL_NAME_COLUMN = "CanonicalName";
 	private static final Map<String, String> TRANSLATIONS;
 
 	private SchoolName() {}	// prevent instantiation
 
 	static {
 		try (
-			InputStream is = Util.getResourceAsInputStream(TRANSLATION_RESOURCE);
-			CSVParser parser = CSVParser.parse(is, Util.CHARSET, FORMAT);
+			var is = Util.getResourceAsInputStream(RESOURCE_NAME);
+			var parser = CSVParser.parse(is, Util.CHARSET, Util.CSV_FORMAT);
 		) {
 			TRANSLATIONS = parser.stream()
 				.filter(record -> {
-					var sSchool = record.get("ScilympiadName");
+					var sSchool = record.get(SCILYMPIAD_NAME_COLUMN);
 					return sSchool != null && !sSchool.isBlank();
 				})
 				.collect(Collectors.toUnmodifiableMap(
-					record -> record.get("ScilympiadName"),	// key mapper
-					record -> record.get("CanonicalName"),		// value mapper
+					record -> record.get(SCILYMPIAD_NAME_COLUMN),	// key mapper
+					record -> record.get(CANONICAL_NAME_COLUMN),		// value mapper
 					(v1, v2) -> {
 						throw new IllegalStateException("One Scilympid school name is mapped to "
 							+ "two canonical school names, '%1$s' and '%2$s'.".formatted(v1, v2));

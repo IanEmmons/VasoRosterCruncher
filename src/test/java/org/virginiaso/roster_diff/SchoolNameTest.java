@@ -28,26 +28,27 @@ public class SchoolNameTest {
 			}
 		}
 
-		PortalRetriever<Coach> coachRetriever = CoachRetrieverFactory.create();
-		Set<String> portalSchools = coachRetriever.readLatestReportFile().stream()
+		var portalSchools = ConsolidatedCoachRetriever.getConsolidatedCoachList().stream()
 			.map(Coach::school)
 			.collect(Collectors.toUnmodifiableSet());
-
-		Set<String> canonicalSchools;
-		try (
-			InputStream is = Util.getResourceAsInputStream(SchoolName.TRANSLATION_RESOURCE);
-			CSVParser parser = CSVParser.parse(is, Util.CHARSET, SchoolName.FORMAT);
-		) {
-			canonicalSchools = parser.stream()
-				.map(record -> record.get("CanonicalName"))
-				.collect(Collectors.toUnmodifiableSet());
-		}
+		var canonicalSchools = getCanonicalSchools();
 
 		assertTrue(canonicalSchools.containsAll(portalSchools),
 			"Some schools in the portal are not in the canonical list (%1$s)"
-				.formatted(SchoolName.TRANSLATION_RESOURCE));
+				.formatted(SchoolName.RESOURCE_NAME));
 		assertTrue(portalSchools.containsAll(canonicalSchools),
 			"Some schools in the canonical list (%1$s) are not in the portal"
-				.formatted(SchoolName.TRANSLATION_RESOURCE));
+				.formatted(SchoolName.RESOURCE_NAME));
+	}
+
+	private static Set<String> getCanonicalSchools() throws IOException {
+		try (
+			InputStream is = Util.getResourceAsInputStream(SchoolName.RESOURCE_NAME);
+			CSVParser parser = CSVParser.parse(is, Util.CHARSET, Util.CSV_FORMAT);
+		) {
+			return parser.stream()
+				.map(record -> record.get(SchoolName.CANONICAL_NAME_COLUMN))
+				.collect(Collectors.toUnmodifiableSet());
+		}
 	}
 }

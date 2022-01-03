@@ -6,8 +6,13 @@ public record Coach(
 	String email,
 	String school)
 {
+	public Coach(String fullName, String email, String school) {
+		this("", fullName, email, school);
+	}
+
 	public String prettyEmail() {
-		return "%1$s %2$s <%3$s>".formatted(firstName, lastName, email);
+		var name = String.join(" ", firstName, lastName);
+		return "%1$s <%2$s>".formatted(name, email);
 	}
 
 	@Override

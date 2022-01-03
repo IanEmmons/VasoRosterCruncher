@@ -14,9 +14,16 @@ import java.util.regex.Pattern;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
+import org.apache.commons.csv.CSVFormat;
+
 public class Util {
 	public static final String CONFIGURATION_RESOURCE = "configuration.properties";
 	public static final Charset CHARSET = StandardCharsets.UTF_8;
+	public static final CSVFormat CSV_FORMAT = CSVFormat.DEFAULT.builder()
+		.setHeader()
+		.setIgnoreEmptyLines(true)
+		.setTrim(true)
+		.build();
 	private static final Pattern WHITESPACE = Pattern.compile("\\s\\s+");
 
 	private Util() {}	// prevent instantiation
