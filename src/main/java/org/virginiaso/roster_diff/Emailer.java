@@ -11,6 +11,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Properties;
 import java.util.function.BiPredicate;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import javax.activation.DataHandler;
@@ -105,7 +106,8 @@ public class Emailer {
 			message.setContent(multipartContent);
 
 			Transport.send(message, userName, password);
-			System.out.println("Mail successfully sent");
+			System.out.format("Mail successfully sent to %1$s%n",
+				recipients.stream().collect(Collectors.joining(", ")));
 		} catch (MessagingException ex) {
 			throw new UncheckedMessagingException(ex);
 		}

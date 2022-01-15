@@ -19,7 +19,6 @@ dependencies {
 	implementation 'javax.mail:javax.mail-api:1.6.2'
 	implementation 'com.sun.mail:javax.mail:1.6.2'
 	implementation 'org.apache.poi:poi-ooxml:5.0.0'
-	implementation 'org.jsoup:jsoup:1.14.2'
 
 	testImplementation 'org.junit.jupiter:junit-jupiter:5.8.2'
 }

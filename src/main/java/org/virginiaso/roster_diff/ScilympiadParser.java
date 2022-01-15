@@ -147,12 +147,12 @@ public class ScilympiadParser {
 	}
 
 	private static int parseGrade(String gradeStr, int rowNum) {
-		return "K".equalsIgnoreCase(gradeStr)
-			? 0
-			: getMatchedPortion(gradeStr, GRADE_PATTERN)
-				.map(Integer::parseInt)
-				.orElseThrow(() -> new ParseException(
-					"Grade '%1$s' in row %2$d is malformed", gradeStr, rowNum));
+		return getMatchedPortion(gradeStr, GRADE_PATTERN)
+			.map(Integer::parseInt)
+			.orElseGet(() -> {
+				System.out.format("WARNING: Grade '%1$s' in row %2$d is malformed%n", gradeStr, rowNum);
+				return 0;
+			});
 	}
 
 	static Optional<String> getMatchedPortion(String str, Pattern pattern) {
