@@ -99,6 +99,7 @@ public class ReportBuilder {
 				.filter(student -> student.school().equals(schoolName))
 				.count();
 			if (numSStudentsNotFoundInP <= 0) {
+				System.out.format("No missing permissions: %1$s%n", schoolName);
 				return;
 			}
 
