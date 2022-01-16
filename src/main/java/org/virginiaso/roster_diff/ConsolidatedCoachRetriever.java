@@ -2,6 +2,8 @@ package org.virginiaso.roster_diff;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -15,7 +17,7 @@ public class ConsolidatedCoachRetriever {
 
 	private ConsolidatedCoachRetriever() {}	// prevent instantiation
 
-	public static List<Coach> getConsolidatedCoachList() throws IOException {
+	public static Set<Coach> getConsolidatedCoachList() throws IOException {
 		var portalCoaches = CoachRetrieverFactory.create().readLatestReportFile();
 		var extraCoaches = getExtraCoachList();
 
@@ -29,35 +31,29 @@ public class ConsolidatedCoachRetriever {
 		if (!schoolsNotInPortal.isEmpty()) {
 			var schoolList = schoolsNotInPortal.stream().collect(
 				Collectors.joining("%n   ".formatted()));
-			System.out.format(
+			throw new ParseException(
 				"Found %1$d schools in 'extra' coach list not in the portal:%n   %2$s%n",
 				schoolsNotInPortal.size(), schoolList);
-			throw new IllegalStateException("Need to fix the 'extra' coach list");
 		}
 
-		var portalEmails = portalCoaches.stream()
-			.map(Coach::email)
-			.map(String::toLowerCase)
-			.collect(Collectors.toUnmodifiableSet());
-		var extraCoachesNoDups = extraCoaches.stream()
-			.filter(coach -> !portalEmails.contains(coach.email().toLowerCase()))
-			.collect(Collectors.toUnmodifiableList());
-
-		return Stream.concat(portalCoaches.stream(), extraCoachesNoDups.stream())
-			.collect(Collectors.toUnmodifiableList());
+		return Stream.concat(portalCoaches.stream(), extraCoaches.stream())
+			.collect(Collectors.toCollection(() -> new TreeSet<>()));
 	}
 
 	private static List<Coach> getExtraCoachList() throws IOException {
+		Stopwatch timer = new Stopwatch();
 		try (
 			var is = Util.getResourceAsInputStream(RESOURCE_NAME);
 			var parser = CSVParser.parse(is, Util.CHARSET, Util.CSV_FORMAT);
 		) {
-			return parser.stream()
+			var result = parser.stream()
 				.map(record -> new Coach(
 					record.get(NAME_COLUMN),
 					record.get(EMAIL_COLUMN),
 					record.get(SCHOOL_COLUMN)))
 				.collect(Collectors.toUnmodifiableList());
+			timer.stopAndReport("Parsed extra coach file");
+			return result;
 		}
 	}
 }
