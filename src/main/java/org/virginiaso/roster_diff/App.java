@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 
@@ -35,8 +36,8 @@ public class App {
 
 	private void run() throws IOException, ParseException {
 		List<Coach> coaches = CoachRetrieverFactory.create().readLatestReportFile();
-		Map<String, List<Coach>> schoolToCoachsMap = coaches.stream()
-			.collect(Collectors.groupingBy(Coach::school));
+		Map<String, List<Coach>> schoolToCoachsMap = coaches.stream().collect(
+			Collectors.groupingBy(Coach::school, TreeMap::new, Collectors.toList()));
 		List<Match> matches = Match.parse(masterReportFile);
 		List<Student> pStudents = StudentRetrieverFactory.create().readLatestReportFile();
 		List<Student> sStudents = ScilympiadParser.readLatestRosterFile();

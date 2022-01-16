@@ -50,7 +50,7 @@ public class Emailer {
 				.max(Comparator.comparing(Path::toString))
 				.flatMap(dir -> find(dir, reportFilePredicate).min(Comparator.comparing(Path::toString)))
 				.map(Emailer::readFileContent)
-				.ifPresent(reportBody -> emailer.send("Test Email", reportBody, attachment, recipients));
+				.ifPresent(reportBody -> emailer.send("Test Email", reportBody, attachment, "Test School", recipients));
 		} catch (Throwable ex) {
 			ex.printStackTrace();
 		}
@@ -80,7 +80,8 @@ public class Emailer {
 		password = props.getProperty("mail.password");
 	}
 
-	public void send(String emailSubject, String emailBody, File attachment, List<String> recipients) {
+	public void send(String emailSubject, String emailBody, File attachment,
+			String schoolName, List<String> recipients) {
 		if (recipients == null || recipients.isEmpty()) {
 			return;
 		}
@@ -106,8 +107,8 @@ public class Emailer {
 			message.setContent(multipartContent);
 
 			Transport.send(message, userName, password);
-			System.out.format("Mail successfully sent to %1$s%n",
-				recipients.stream().collect(Collectors.joining(", ")));
+			System.out.format("Email sent to %1$s (%2$s)%n",
+				schoolName, recipients.stream().collect(Collectors.joining(", ")));
 		} catch (MessagingException ex) {
 			throw new UncheckedMessagingException(ex);
 		}

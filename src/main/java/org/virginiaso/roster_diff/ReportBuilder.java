@@ -109,7 +109,7 @@ public class ReportBuilder {
 				var recipients = coaches.stream()
 					.map(Coach::prettyEmail)
 					.collect(Collectors.toUnmodifiableList());
-				emailer.send(emailSubject, emailBody, null, recipients);
+				emailer.send(emailSubject, emailBody, null, schoolName, recipients);
 			}
 		}
 	}
