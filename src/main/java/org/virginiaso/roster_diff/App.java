@@ -44,7 +44,7 @@ public class App {
 
 		checkForMissingSchoolsInCoachesFile(schoolToCoachsMap.keySet(), pStudents, sStudents);
 
-		System.out.format("Found %1$d portal students and %2$d Scilimpiad students%n",
+		System.out.format("Found %1$d portal students and %2$d Scilympiad students%n",
 			pStudents.size(), sStudents.size());
 
 		DifferenceEngine engine = DifferenceEngine.compare(matches, pStudents, sStudents,
