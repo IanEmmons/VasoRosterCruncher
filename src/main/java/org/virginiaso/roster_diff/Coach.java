@@ -22,10 +22,10 @@ public record Coach(String firstName, String lastName, String email, String scho
 	public boolean equals(Object rhs) {
 		if (this == rhs) {
 			return true;
-		} else if (!(rhs instanceof Coach coach)) {
+		} else if (!(rhs instanceof Coach rhsAsCoach)) {
 			return false;
 		} else {
-			return Objects.equals(email, coach.email);
+			return Objects.equals(email, rhsAsCoach.email);
 		}
 	}
 

@@ -16,10 +16,10 @@ public record Student(String firstName, String lastName, String nickName, String
 	public boolean equals(Object rhs) {
 		if (this == rhs) {
 			return true;
-		} else if (!(rhs instanceof Student rhsAsPS)) {
+		} else if (!(rhs instanceof Student rhsAsStudent)) {
 			return false;
 		} else {
-			return this.compareTo(rhsAsPS) == 0;
+			return this.compareTo(rhsAsStudent) == 0;
 		}
 	}
 
