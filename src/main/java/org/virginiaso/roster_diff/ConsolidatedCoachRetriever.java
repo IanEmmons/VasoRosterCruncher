@@ -24,19 +24,11 @@ public class ConsolidatedCoachRetriever {
 		var portalSchools = portalCoaches.stream()
 			.map(Coach::school)
 			.collect(Collectors.toUnmodifiableSet());
-		var schoolsNotInPortal = extraCoaches.stream()
-			.map(Coach::school)
-			.filter(school -> !portalSchools.contains(school))
-			.collect(Collectors.toUnmodifiableSet());
-		if (!schoolsNotInPortal.isEmpty()) {
-			var schoolList = schoolsNotInPortal.stream().collect(
-				Collectors.joining("%n   ".formatted()));
-			throw new ParseException(
-				"Found %1$d schools in 'extra' coach list not in the portal:%n   %2$s%n",
-				schoolsNotInPortal.size(), schoolList);
-		}
 
-		return Stream.concat(portalCoaches.stream(), extraCoaches.stream())
+		var extraCoachesForSchoolsFoundInPortal = extraCoaches.stream()
+			.filter(coach -> portalSchools.contains(coach.school()));
+
+		return Stream.concat(portalCoaches.stream(), extraCoachesForSchoolsFoundInPortal)
 			.collect(Collectors.toCollection(() -> new TreeSet<>()));
 	}
 
