@@ -8,8 +8,10 @@ import java.io.Reader;
 import java.io.UncheckedIOException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.util.HashSet;
 import java.util.MissingResourceException;
 import java.util.Properties;
+import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -59,6 +61,12 @@ public class Util {
 	public static String getStem(String fileName) {
 		int i = fileName.lastIndexOf('.');
 		return (i == -1) ? fileName : fileName.substring(0, i);
+	}
+
+	public static <T> Set<T> setDiff(Set<T> lhs, Set<T> rhs) {
+		Set<T> diff = new HashSet<>(lhs);
+		diff.removeAll(rhs);
+		return diff;
 	}
 
 	public static InputStream getResourceAsInputStream(String resourceName) {

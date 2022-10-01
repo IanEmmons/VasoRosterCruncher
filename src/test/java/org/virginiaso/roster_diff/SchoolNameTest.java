@@ -33,12 +33,11 @@ public class SchoolNameTest {
 			.collect(Collectors.toUnmodifiableSet());
 		var canonicalSchools = getCanonicalSchools();
 
-		assertTrue(canonicalSchools.containsAll(portalSchools),
-			"Some schools in the portal are not in the canonical list (%1$s)"
-				.formatted(SchoolName.RESOURCE_NAME));
-		assertTrue(portalSchools.containsAll(canonicalSchools),
-			"Some schools in the canonical list (%1$s) are not in the portal"
-				.formatted(SchoolName.RESOURCE_NAME));
+		var portalSchoolsNotInCanonical = Util.setDiff(portalSchools, canonicalSchools);
+		assertTrue(portalSchoolsNotInCanonical.isEmpty(),
+			"Some schools in the portal are not in the canonical list (%1$s): %n\t'%2$s'"
+				.formatted(SchoolName.RESOURCE_NAME, portalSchoolsNotInCanonical.stream()
+					.collect(Collectors.joining("',%n\t'".formatted()))));
 	}
 
 	private static Set<String> getCanonicalSchools() throws IOException {
