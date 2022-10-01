@@ -77,7 +77,7 @@ public class ReportBuilder {
 			throws IOException {
 		emailer = new Emailer();
 		this.engine = Objects.requireNonNull(engine, "engine");
-		this.masterReport = Objects.requireNonNull(masterReport, "masterReportFile");
+		this.masterReport = Objects.requireNonNull(masterReport, "masterReport");
 		this.reportDir = Objects.requireNonNull(reportDir, "reportDir");
 	}
 
