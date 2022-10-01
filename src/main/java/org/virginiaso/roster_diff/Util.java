@@ -8,10 +8,10 @@ import java.io.Reader;
 import java.io.UncheckedIOException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import java.util.HashSet;
 import java.util.MissingResourceException;
 import java.util.Properties;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -64,7 +64,7 @@ public class Util {
 	}
 
 	public static <T> Set<T> setDiff(Set<T> lhs, Set<T> rhs) {
-		Set<T> diff = new HashSet<>(lhs);
+		Set<T> diff = new TreeSet<>(lhs);
 		diff.removeAll(rhs);
 		return diff;
 	}

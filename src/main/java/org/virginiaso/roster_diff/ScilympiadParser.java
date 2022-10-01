@@ -12,6 +12,7 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.BiPredicate;
 import java.util.regex.Matcher;
@@ -71,7 +72,7 @@ public class ScilympiadParser {
 		return Stream.of(suffixStr.split(","))
 			.map(String::strip)
 			.map(suffix -> getLatestReportFileForSuffix(reportDir, suffix))
-			.filter(file -> file != null)
+			.filter(Objects::nonNull)
 			.map(ScilympiadParser::parse)
 			.flatMap(List::stream)
 			.collect(Collectors.toUnmodifiableList());
