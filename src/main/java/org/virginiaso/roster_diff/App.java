@@ -23,6 +23,8 @@ public class App {
 			if (ex.getMessage() != null && !ex.getMessage().isBlank()) {
 				System.out.format("%n%1$s%n%n", ex.getMessage());
 			}
+		} catch (SchoolNameException ex) {
+			System.out.println(ex.getMessage());
 		} catch (Throwable ex) {
 			ex.printStackTrace();
 		}

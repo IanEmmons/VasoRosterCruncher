@@ -29,8 +29,9 @@ public class SchoolName {
 					record -> record.get(SCILYMPIAD_NAME_COLUMN),	// key mapper
 					record -> record.get(CANONICAL_NAME_COLUMN),		// value mapper
 					(v1, v2) -> {
-						throw new IllegalStateException("One Scilympid school name is mapped to "
-							+ "two canonical school names, '%1$s' and '%2$s'.".formatted(v1, v2));
+						throw new SchoolNameException(
+							"One Scilympid school name is mapped to two canonical school names, '%1$s' and '%2$s'",
+							v1, v2);
 					}));	// merge function
 		} catch (IOException ex) {
 			throw new UncheckedIOException(ex);
@@ -40,9 +41,9 @@ public class SchoolName {
 	public static String normalize(String scilympiadSchoolName) {
 		var canonicalName = TRANSLATIONS.get(scilympiadSchoolName);
 		if (canonicalName == null) {
-			throw new IllegalStateException(
-				"The Scilympid school name '%1$s' has not been mapped to a canonical name."
-					.formatted(scilympiadSchoolName));
+			throw new SchoolNameException(
+				"The Scilympid school name '%1$s' has not been mapped to a canonical name",
+				scilympiadSchoolName);
 		}
 		return canonicalName;
 	}
