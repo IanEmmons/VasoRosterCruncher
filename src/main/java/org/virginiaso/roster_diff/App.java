@@ -37,6 +37,8 @@ public class App {
 	}
 
 	private void run() throws IOException, ParseException {
+		SchoolName.checkThatAllPortalSchoolsArePresentInSchoolNamesResource();
+
 		Set<Coach> coaches = ConsolidatedCoachRetriever.getConsolidatedCoachList();
 		Map<String, List<Coach>> schoolToCoachsMap = coaches.stream().collect(
 			Collectors.groupingBy(Coach::school, TreeMap::new, Collectors.toList()));
