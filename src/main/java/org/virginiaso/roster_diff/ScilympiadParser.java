@@ -57,7 +57,7 @@ public class ScilympiadParser {
 	private static final Pattern TEAM_NAME_PATTERN = Pattern.compile(
 		"^Team Name: (.*)$", Pattern.CASE_INSENSITIVE);
 	private static final Pattern TEAM_NUMBER_PATTERN = Pattern.compile(
-		"^([ABC][0-9]+)$", Pattern.CASE_INSENSITIVE);
+		"^((A[0-9]+[a-z]?)|([BC][0-9]+))$", Pattern.CASE_INSENSITIVE);
 	private static final Pattern GRADE_PATTERN = Pattern.compile(
 		"^([0-9]+)\\s*((st)|(nd)|(rd)|(th))?$", Pattern.CASE_INSENSITIVE);
 
