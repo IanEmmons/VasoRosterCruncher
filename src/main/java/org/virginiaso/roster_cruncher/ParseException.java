@@ -1,4 +1,4 @@
-package org.virginiaso.roster_diff;
+package org.virginiaso.roster_cruncher;
 
 public class ParseException extends RuntimeException {
 	private static final long serialVersionUID = 1L;

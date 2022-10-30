@@ -1,4 +1,4 @@
-package org.virginiaso.roster_diff;
+package org.virginiaso.roster_cruncher;
 
 public class CmdLineException extends Exception {
 	private static final long serialVersionUID = 1L;

@@ -1,4 +1,4 @@
-package org.virginiaso.roster_diff;
+package org.virginiaso.roster_cruncher;
 
 import java.io.File;
 import java.io.FileOutputStream;

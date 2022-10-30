@@ -1,4 +1,4 @@
-package org.virginiaso.roster_diff;
+package org.virginiaso.roster_cruncher;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;

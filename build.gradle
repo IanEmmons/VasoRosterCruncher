@@ -29,26 +29,26 @@ tasks.withType(JavaCompile) {
 }
 
 application {
-	mainClass = 'org.virginiaso.roster_diff.App'
+	mainClass = 'org.virginiaso.roster_cruncher.App'
 }
 
 task diffRosters(type: JavaExec) {
 	dependsOn 'classes'
-	mainClass = 'org.virginiaso.roster_diff.App'
+	mainClass = 'org.virginiaso.roster_cruncher.App'
 	classpath = sourceSets.main.runtimeClasspath
 	systemProperty 'mail.password', "$mailPassword"
 }
 
 task getPortalRoster(type: JavaExec) {
 	dependsOn 'classes'
-	mainClass = 'org.virginiaso.roster_diff.PortalRetriever'
+	mainClass = 'org.virginiaso.roster_cruncher.PortalRetriever'
 	classpath = sourceSets.main.runtimeClasspath
 	systemProperty 'portal.password', "$portalPassword"
 }
 
 task sendTestEmail(type: JavaExec) {
 	dependsOn 'classes'
-	mainClass = 'org.virginiaso.roster_diff.Emailer'
+	mainClass = 'org.virginiaso.roster_cruncher.Emailer'
 	classpath = sourceSets.main.runtimeClasspath
 	systemProperty 'mail.password', "$mailPassword"
 }

@@ -1,4 +1,4 @@
-package org.virginiaso.roster_diff;
+package org.virginiaso.roster_cruncher;
 
 import org.apache.commons.text.similarity.LevenshteinDistance;
 
