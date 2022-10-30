@@ -8,9 +8,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
-import org.apache.poi.ss.usermodel.Row.MissingCellPolicy;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
@@ -43,13 +41,6 @@ public class Match {
 			return new ArrayList<>();
 		}
 		try (InputStream is = new FileInputStream(masterReportFile)) {
-			return parse(is);
-		}
-	}
-
-	public static List<Match> parse(String masterReportResource)
-			throws IOException, ParseException {
-		try (InputStream is = Util.getResourceAsInputStream(masterReportResource)) {
 			return parse(is);
 		}
 	}
@@ -93,22 +84,11 @@ public class Match {
 	}
 
 	private static String getStringCellValue(Row row, Column column) {
-		Cell cell = row.getCell(column.ordinal(), MissingCellPolicy.RETURN_BLANK_AS_NULL);
-		if (cell == null) {
-			return "";
-		} else {
-			String content = cell.getStringCellValue();
-			return (content == null)
-				? ""
-				: Util.normalizeSpace(content);
-		}
+		return Util.getStringCellValue(row, column.ordinal());
 	}
 
 	private static int getNumericCellValue(Row row, Column column) {
-		Cell cell = row.getCell(column.ordinal(), MissingCellPolicy.RETURN_BLANK_AS_NULL);
-		return (cell == null)
-			? -1
-			: (int) Math.round(cell.getNumericCellValue());
+		return Util.getNumericCellValue(row, column.ordinal());
 	}
 
 	public Student getSStudent() {

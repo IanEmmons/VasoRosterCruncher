@@ -14,6 +14,7 @@ import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 
@@ -37,6 +38,7 @@ public class ReportBuilder {
 	private static final String P_NOT_S_SHEET_TITLE = "In Portal, not Scilympiad";
 	private static final String S_NOT_P_SHEET_TITLE = "In Scilympiad, not Portal";
 	static final String MATCHES_SHEET_TITLE = "Adjudicated Matches";
+	static final String IGNORED_SHEET_TITLE = "Ignored Scilympiad Students";
 	static final String SCILYMPIAD_ROW_LABEL = "Scilympiad:";
 	static final String PORTAL_ROW_LABEL = "Portal:";
 	private static final int VERDICT_COLUMN_NUMBER = 7;
@@ -81,36 +83,37 @@ public class ReportBuilder {
 		this.reportDir = Objects.requireNonNull(reportDir, "reportDir");
 	}
 
-	public void createReport(String schoolName, List<Coach> coaches, boolean sendEmail) {
-		if (schoolName == null || coaches == null) {
-			try (Workbook workbook = new XSSFWorkbook(XSSFWorkbookType.XLSX)) {
-				createMatchesSheet(workbook);
-				createSNotInPSheet(workbook, null);
-				createPNotInSSheet(workbook, null);
+	public void createMasterReport(Set<Student> ignoredSStudents) {
+		try (Workbook workbook = new XSSFWorkbook(XSSFWorkbookType.XLSX)) {
+			createMatchesSheet(workbook);
+			createIgnoredSheet(workbook, ignoredSStudents);
+			createSNotInPSheet(workbook);
+			createPNotInSSheet(workbook);
 
-				try (OutputStream os = new FileOutputStream(getReportFile(null))) {
-					workbook.write(os);
-				}
-			} catch (IOException ex) {
-				throw new UncheckedIOException(ex);
+			try (OutputStream os = new FileOutputStream(getReportFile(null))) {
+				workbook.write(os);
 			}
-		} else {
-			var numSStudentsNotFoundInP = engine.getSStudentsNotFoundInP().stream()
-				.filter(student -> student.school().equals(schoolName))
-				.count();
-			if (numSStudentsNotFoundInP <= 0) {
-				System.out.format("No missing permissions: %1$s%n", schoolName);
-				return;
-			}
+		} catch (IOException ex) {
+			throw new UncheckedIOException(ex);
+		}
+	}
 
-			var emailBody = createSchoolReport(schoolName);
-			if (sendEmail) {
-				var emailSubject = EMAIL_SUBJECT_FORMAT.formatted(schoolName);
-				var recipients = coaches.stream()
-					.map(Coach::prettyEmail)
-					.collect(Collectors.toUnmodifiableList());
-				emailer.send(emailSubject, emailBody, null, schoolName, recipients);
-			}
+	public void createSchoolReport(String schoolName, List<Coach> coaches, boolean sendEmail) {
+		var numSStudentsNotFoundInP = engine.getSStudentsNotFoundInP().stream()
+			.filter(student -> student.school().equals(schoolName))
+			.count();
+		if (numSStudentsNotFoundInP <= 0) {
+			System.out.format("No missing permissions: %1$s%n", schoolName);
+			return;
+		}
+
+		var emailBody = createSchoolReport(schoolName);
+		if (sendEmail) {
+			var emailSubject = EMAIL_SUBJECT_FORMAT.formatted(schoolName);
+			var recipients = coaches.stream()
+				.map(Coach::prettyEmail)
+				.collect(Collectors.toUnmodifiableList());
+			emailer.send(emailSubject, emailBody, null, schoolName, recipients);
 		}
 	}
 
@@ -258,21 +261,28 @@ public class ReportBuilder {
 		sheet.addValidationData(validation);
 	}
 
-	private void createSNotInPSheet(Workbook workbook, String schoolName) {
-		Sheet sheet = workbook.createSheet(S_NOT_P_SHEET_TITLE);
+	private void createIgnoredSheet(Workbook workbook, Set<Student> ignoredSStudents) {
+		Sheet sheet = workbook.createSheet(IGNORED_SHEET_TITLE);
 		setHeadings(sheet, HEADINGS_FOR_STUDENTS_IN_ONLY_ONE_SYSTEM);
-		engine.getSStudentsNotFoundInP().stream()
-			.filter(student -> (schoolName == null || student.school().equals(schoolName)))
+		ignoredSStudents.stream()
 			.forEach(student -> createScilympiadStudentRow(sheet, student));
 		sheet.createFreezePane(0, 1);
 		autoSizeColumns(sheet);
 	}
 
-	private void createPNotInSSheet(Workbook workbook, String schoolName) {
+	private void createSNotInPSheet(Workbook workbook) {
+		Sheet sheet = workbook.createSheet(S_NOT_P_SHEET_TITLE);
+		setHeadings(sheet, HEADINGS_FOR_STUDENTS_IN_ONLY_ONE_SYSTEM);
+		engine.getSStudentsNotFoundInP().stream()
+			.forEach(student -> createScilympiadStudentRow(sheet, student));
+		sheet.createFreezePane(0, 1);
+		autoSizeColumns(sheet);
+	}
+
+	private void createPNotInSSheet(Workbook workbook) {
 		Sheet sheet = workbook.createSheet(P_NOT_S_SHEET_TITLE);
 		setHeadings(sheet, HEADINGS_FOR_STUDENTS_IN_ONLY_ONE_SYSTEM);
 		engine.getPStudentsNotFoundInS().stream()
-			.filter(student -> (schoolName == null || student.school().equals(schoolName)))
 			.forEach(student -> createPortalStudentRow(sheet, student));
 		sheet.createFreezePane(0, 1);
 		autoSizeColumns(sheet);

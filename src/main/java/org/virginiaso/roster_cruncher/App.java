@@ -43,8 +43,13 @@ public class App {
 		Map<String, List<Coach>> schoolToCoachsMap = coaches.stream().collect(
 			Collectors.groupingBy(Coach::school, TreeMap::new, Collectors.toList()));
 		List<Match> matches = Match.parse(masterReportFile);
+		Set<Student> ignoredSStudents = IgnoredScilympiadStudentParser.parse(masterReportFile);
 		List<Student> pStudents = StudentRetrieverFactory.create().readLatestReportFile();
 		List<Student> sStudents = ScilympiadParser.readLatestRosterFile();
+
+		sStudents = sStudents.stream()
+			.filter(student -> !ignoredSStudents.contains(student))
+			.collect(Collectors.toUnmodifiableList());
 
 		checkForMissingSchoolsInCoachesFile(schoolToCoachsMap.keySet(), pStudents, sStudents);
 
@@ -73,10 +78,11 @@ public class App {
 
 		Stopwatch reportTimer = new Stopwatch();
 		ReportBuilder rb = new ReportBuilder(engine, masterReportFile, getReportDir());
-		rb.createReport(null, null, false);
+		rb.createMasterReport(ignoredSStudents);
 
 		schoolToCoachsMap.entrySet().stream().forEach(
-			schoolEntry -> rb.createReport(schoolEntry.getKey(), schoolEntry.getValue(), sendReports));
+			schoolEntry -> rb.createSchoolReport(
+				schoolEntry.getKey(), schoolEntry.getValue(), sendReports));
 		reportTimer.stopAndReport("Built reports");
 	}
 

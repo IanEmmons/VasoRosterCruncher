@@ -8,15 +8,21 @@ import java.io.Reader;
 import java.io.UncheckedIOException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.util.Iterator;
 import java.util.MissingResourceException;
 import java.util.Properties;
 import java.util.Set;
+import java.util.Spliterator;
+import java.util.Spliterators;
 import java.util.TreeSet;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import org.apache.commons.csv.CSVFormat;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Row.MissingCellPolicy;
 
 public class Util {
 	public static final String CONFIGURATION_RESOURCE = "configuration.properties";
@@ -101,6 +107,11 @@ public class Util {
 		return StreamSupport.stream(it.spliterator(), false);
 	}
 
+	public static <T> Stream<T> asStream(Iterator<T> it) {
+		return StreamSupport.stream(
+			Spliterators.spliteratorUnknownSize(it, Spliterator.IMMUTABLE), false);
+	}
+
 	public static File parseFileArgument(Properties props, String propName) {
 		String fileNameSetting = props.getProperty(propName);
 		if (fileNameSetting == null || fileNameSetting.isBlank()) {
@@ -108,5 +119,24 @@ public class Util {
 				"Configuration setting '%1$s' is missing".formatted(propName));
 		}
 		return new File(fileNameSetting.strip());
+	}
+
+	public static String getStringCellValue(Row row, int columnOrdinal) {
+		Cell cell = row.getCell(columnOrdinal, MissingCellPolicy.RETURN_BLANK_AS_NULL);
+		if (cell == null) {
+			return "";
+		} else {
+			String content = cell.getStringCellValue();
+			return (content == null)
+				? ""
+				: Util.normalizeSpace(content);
+		}
+	}
+
+	public static int getNumericCellValue(Row row, int columnOrdinal) {
+		Cell cell = row.getCell(columnOrdinal, MissingCellPolicy.RETURN_BLANK_AS_NULL);
+		return (cell == null)
+			? -1
+			: (int) Math.round(cell.getNumericCellValue());
 	}
 }
