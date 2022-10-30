@@ -45,11 +45,11 @@ public class App {
 		List<Match> matches = Match.parse(masterReportFile);
 		Set<Student> ignoredSStudents = IgnoredScilympiadStudentParser.parse(masterReportFile);
 		List<Student> pStudents = StudentRetrieverFactory.create().readLatestReportFile();
-		List<Student> sStudents = ScilympiadParser.readLatestRosterFile();
+		Set<Student> sStudents = ScilympiadParser.readLatestRosterFile();
 
 		sStudents = sStudents.stream()
 			.filter(student -> !ignoredSStudents.contains(student))
-			.collect(Collectors.toUnmodifiableList());
+			.collect(Collectors.toUnmodifiableSet());
 
 		checkForMissingSchoolsInCoachesFile(schoolToCoachsMap.keySet(), pStudents, sStudents);
 
@@ -87,7 +87,7 @@ public class App {
 	}
 
 	private void checkForMissingSchoolsInCoachesFile(Set<String> schools,
-			List<Student> pStudents, List<Student> sStudents) {
+			List<Student> pStudents, Set<Student> sStudents) {
 		Set<String> schoolNames = new TreeSet<>();
 		pStudents.stream()
 			.map(pStudent -> pStudent.school())

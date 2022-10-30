@@ -32,7 +32,7 @@ application {
 	mainClass = 'org.virginiaso.roster_cruncher.App'
 }
 
-task diffRosters(type: JavaExec) {
+task crunchRosters(type: JavaExec) {
 	dependsOn 'classes'
 	mainClass = 'org.virginiaso.roster_cruncher.App'
 	classpath = sourceSets.main.runtimeClasspath

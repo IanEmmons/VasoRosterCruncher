@@ -22,7 +22,7 @@ public class DifferenceEngine {
 	private final Map<Student, Map<Integer, List<Student>>> results;
 
 	public static DifferenceEngine compare(List<Match> manualMatches,
-			List<Student> pStudents, List<Student> sStudents,
+			List<Student> pStudents, Set<Student> sStudents,
 			DistanceFunction distanceFunction) {
 		Stopwatch timer = new Stopwatch();
 		DifferenceEngine engine = new DifferenceEngine(manualMatches, pStudents, sStudents);
@@ -32,7 +32,7 @@ public class DifferenceEngine {
 	}
 
 	private DifferenceEngine(List<Match> manualMatches, List<Student> pStudentList,
-			List<Student> sStudentList) {
+			Set<Student> sStudentList) {
 		pStudents = new TreeSet<>(pStudentList);
 		sStudents = new TreeSet<>(sStudentList);
 

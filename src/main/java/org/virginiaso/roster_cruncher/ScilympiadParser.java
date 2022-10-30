@@ -14,6 +14,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.BiPredicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -63,7 +64,7 @@ public class ScilympiadParser {
 
 	private ScilympiadParser() {}	// Prevents Instantiation
 
-	public static List<Student> readLatestRosterFile()
+	public static Set<Student> readLatestRosterFile()
 			throws IOException {
 		var props = Util.loadPropertiesFromResource(Util.CONFIGURATION_RESOURCE);
 		var siteName = props.getProperty("scilympiad.site");
@@ -75,7 +76,7 @@ public class ScilympiadParser {
 			.filter(Objects::nonNull)
 			.map(ScilympiadParser::parse)
 			.flatMap(List::stream)
-			.collect(Collectors.toUnmodifiableList());
+			.collect(Collectors.toUnmodifiableSet());
 	}
 
 	private static File getLatestReportFileForSuffix(File reportDir, String suffix) {
