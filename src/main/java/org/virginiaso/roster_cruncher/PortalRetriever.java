@@ -16,7 +16,6 @@ import java.lang.reflect.Type;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
-import java.net.http.HttpRequest.BodyPublishers;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.nio.file.FileVisitOption;
@@ -28,14 +27,9 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import com.google.gson.Gson;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
 import com.google.gson.stream.JsonWriter;
 
 public class PortalRetriever<Item> {
@@ -60,18 +54,12 @@ public class PortalRetriever<Item> {
 		public List<Item> records;
 	}
 
-	private static final String JSON_MEDIA_TYPE = "application/json";
-	private static final String TOKEN_URL = "https://api.knack.com/v1/applications/%1$s/session";
-	private static final String TOKEN_BODY = "{\"email\":\"%1$s\",\"password\":\"%2$s\"}";
 	private static final String REPORT_URL = "https://api.knack.com/v1/pages/scene_%1$s/"
 		+ "views/view_%2$s/records?format=raw&page=%3$d&rows_per_page=%4$d";
 	private static final int PAGE_SIZE = 100;
 
 	// From the configuration file:
 	private final File reportDir;
-	private final String user;
-	private final String password;
-	private final String applicationId;
 
 	// From the factory:
 	private final Type reportResponseType;
@@ -83,8 +71,6 @@ public class PortalRetriever<Item> {
 	private final String view;
 
 	// Computed here:
-	private final HttpClient client;
-	private String userToken;
 	private int totalPages;
 	private int lastPageRead;	// 1-based
 	private List<Item> reportItems;
@@ -93,9 +79,6 @@ public class PortalRetriever<Item> {
 		var props = Util.loadPropertiesFromResource(Util.CONFIGURATION_RESOURCE);
 		var appName = props.getProperty("portal.application.name");
 		reportDir = Util.parseFileArgument(props, "portal.report.dir");
-		user = props.getProperty("portal.user");
-		password = props.getProperty("portal.password");
-		applicationId = props.getProperty("portal.%1$s.application.id".formatted(appName));
 		scene = props.getProperty("portal.%1$s.%2$s.scene".formatted(appName, reportName));
 		view = props.getProperty("portal.%1$s.%2$s.view".formatted(appName, reportName));
 
@@ -105,8 +88,6 @@ public class PortalRetriever<Item> {
 		fileNameFormat = reportName + "-%1$tFT%1$tT.json";
 		fileNamePattern = Pattern.compile(reportName + "-.*\\.json");
 
-		client = HttpClient.newHttpClient();
-		userToken = null;
 		totalPages = -1;
 		lastPageRead = -1;
 		reportItems = new ArrayList<>();
@@ -116,12 +97,10 @@ public class PortalRetriever<Item> {
 		public String string = null;
 	}
 	public void saveRawReport() throws IOException {
-		getUserToken();
-		System.out.format("Found usr token '%1$s'%n", userToken);
-
 		var httpRequest = getHttpRequest(1);
 		var stringHolder = new StringHolder();
-		client.sendAsync(httpRequest, BodyHandlers.ofString())
+		HttpClient.newHttpClient()
+			.sendAsync(httpRequest, BodyHandlers.ofString())
 			.thenApply(HttpResponse::body)
 			.thenAccept(body -> stringHolder.string = body)
 			.join();
@@ -149,11 +128,10 @@ public class PortalRetriever<Item> {
 	}
 
 	private void retrieveReport() throws IOException {
-		getUserToken();
-		System.out.format("Found usr token '%1$s'%n", userToken);
 		for (int currentPage = 1;; ++currentPage) {
 			var httpRequest = getHttpRequest(currentPage);
-			client.sendAsync(httpRequest, BodyHandlers.ofInputStream())
+			HttpClient.newHttpClient()
+				.sendAsync(httpRequest, BodyHandlers.ofInputStream())
 				.thenApply(HttpResponse::body)
 				.thenAccept(is -> reportItems.addAll(readJsonReport(is, this)))
 				.join();
@@ -167,46 +145,10 @@ public class PortalRetriever<Item> {
 		var url = REPORT_URL.formatted(scene, view, currentPage, PAGE_SIZE);
 		return HttpRequest.newBuilder(URI.create(url))
 			.GET()
-			.header("Accept", JSON_MEDIA_TYPE)
-			.header("X-Knack-Application-Id", applicationId)
-			.header("Authorization", userToken)
+			.header("Accept", Util.JSON_MEDIA_TYPE)
+			.header("X-Knack-Application-Id", PortalUserToken.inst().getApplicationId())
+			.header("Authorization", PortalUserToken.inst().getUserToken())
 			.build();
-	}
-
-	private void getUserToken() throws IOException {
-		if (userToken == null || userToken.isBlank()) {
-			var url = TOKEN_URL.formatted(applicationId);
-			var requestBody = TOKEN_BODY.formatted(user, password);
-			var httpRequest = HttpRequest.newBuilder(URI.create(url))
-				.POST(BodyPublishers.ofString(requestBody))
-				.header("Content-Type", JSON_MEDIA_TYPE)
-				.build();
-			client.sendAsync(httpRequest, BodyHandlers.ofString())
-				.thenApply(HttpResponse::body)
-				.thenAccept(this::setUserToken)
-				.join();
-		}
-	}
-
-	private void setUserToken(String jsonResponseBody) {
-		JsonObject response = JsonParser.parseString(jsonResponseBody).getAsJsonObject();
-		if (response.get("session") != null) {
-			userToken = response
-				.get("session").getAsJsonObject()
-				.get("user").getAsJsonObject()
-				.get("token").getAsString();
-		} else {
-			JsonArray errors = response.get("errors").getAsJsonArray();
-			var errorMessages = Util.asStream(errors)
-				.map(JsonElement::getAsJsonObject)
-				.map(error -> error.get("message"))
-				.map(JsonElement::getAsString)
-				.collect(Collectors.joining(
-					"%n".formatted(),
-					"Unable to retrieve Portal API token: ",
-					""));
-			throw new IllegalStateException(errorMessages);
-		}
 	}
 
 	public List<Item> readLatestReportFile() throws IOException {

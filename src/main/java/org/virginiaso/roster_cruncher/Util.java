@@ -27,6 +27,7 @@ import org.apache.poi.ss.usermodel.Row.MissingCellPolicy;
 public class Util {
 	public static final String CONFIGURATION_RESOURCE = "configuration.properties";
 	public static final Charset CHARSET = StandardCharsets.UTF_8;
+	public static final String JSON_MEDIA_TYPE = "application/json";
 	public static final CSVFormat CSV_FORMAT = CSVFormat.DEFAULT.builder()
 		.setHeader()
 		.setIgnoreEmptyLines(true)
