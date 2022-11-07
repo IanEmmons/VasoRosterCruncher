@@ -64,13 +64,9 @@ public class ScilympiadParser {
 
 	private ScilympiadParser() {}	// Prevents Instantiation
 
-	public static Set<Student> readLatestRosterFile()
-			throws IOException {
-		var props = Util.loadPropertiesFromResource(Util.CONFIGURATION_RESOURCE);
-		var siteName = props.getProperty("scilympiad.site");
-		var reportDir = Util.parseFileArgument(props, "scilympiad.report.dir");
-		var suffixStr = props.getProperty("scilympiad.%1$s.suffixes".formatted(siteName), "");
-		return Stream.of(suffixStr.split(","))
+	public static Set<Student> readLatestRosterFile() throws IOException {
+		var reportDir = Config.inst().getScilympiadReportDir();
+		return Stream.of(Config.inst().getScilympiadSuffixes())
 			.map(String::strip)
 			.map(suffix -> getLatestReportFileForSuffix(reportDir, suffix))
 			.filter(Objects::nonNull)

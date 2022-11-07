@@ -58,17 +58,13 @@ public class PortalRetriever<Item> {
 		+ "views/view_%2$s/records?format=raw&page=%3$d&rows_per_page=%4$d";
 	private static final int PAGE_SIZE = 100;
 
-	// From the configuration file:
-	private final File reportDir;
-
-	// From the factory:
+	// From the config and factory:
 	private final Type reportResponseType;
 	private final Gson gson;
 	private final String reportName;
+	private final File reportDir;
 	private final String fileNameFormat;
 	private final Pattern fileNamePattern;
-	private final String scene;
-	private final String view;
 
 	// Computed here:
 	private int totalPages;
@@ -76,15 +72,10 @@ public class PortalRetriever<Item> {
 	private List<Item> reportItems;
 
 	public PortalRetriever(Gson gson, String reportName, Type reportResponseType) {
-		var props = Util.loadPropertiesFromResource(Util.CONFIGURATION_RESOURCE);
-		var appName = props.getProperty("portal.application.name");
-		reportDir = Util.parseFileArgument(props, "portal.report.dir");
-		scene = props.getProperty("portal.%1$s.%2$s.scene".formatted(appName, reportName));
-		view = props.getProperty("portal.%1$s.%2$s.view".formatted(appName, reportName));
-
 		this.reportResponseType = reportResponseType;
 		this.gson = gson;
 		this.reportName = reportName;
+		reportDir = Config.inst().getPortalReportDir();
 		fileNameFormat = reportName + "-%1$tFT%1$tT.json";
 		fileNamePattern = Pattern.compile(reportName + "-.*\\.json");
 
@@ -142,11 +133,12 @@ public class PortalRetriever<Item> {
 	}
 
 	private HttpRequest getHttpRequest(int currentPage) {
-		var url = REPORT_URL.formatted(scene, view, currentPage, PAGE_SIZE);
+		var url = REPORT_URL.formatted(Config.inst().getPortalScene(reportName),
+			Config.inst().getPortalView(reportName), currentPage, PAGE_SIZE);
 		return HttpRequest.newBuilder(URI.create(url))
 			.GET()
 			.header("Accept", Util.JSON_MEDIA_TYPE)
-			.header("X-Knack-Application-Id", PortalUserToken.inst().getApplicationId())
+			.header("X-Knack-Application-Id", Config.inst().getPortalApplicationId())
 			.header("Authorization", PortalUserToken.inst().getUserToken())
 			.build();
 	}

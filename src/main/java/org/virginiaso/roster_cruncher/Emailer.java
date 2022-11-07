@@ -9,7 +9,6 @@ import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Properties;
 import java.util.function.BiPredicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -20,7 +19,6 @@ import javax.mail.BodyPart;
 import javax.mail.Message;
 import javax.mail.MessagingException;
 import javax.mail.Multipart;
-import javax.mail.Session;
 import javax.mail.Transport;
 import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeBodyPart;
@@ -30,10 +28,7 @@ import javax.mail.internet.MimeMultipart;
 public class Emailer {
 	private static final String MEDIA_TYPE = "text/html";
 
-	private final Session session;
-	private final String fromAddr;
-	private final String userName;
-	private final String password;
+	private Emailer() {}	// prevents instantiation
 
 	public static void main(String[] args) {
 		try {
@@ -41,7 +36,6 @@ public class Emailer {
 				//"Karen Emmons <karen@emmons.mobi>",
 				"Ian Emmons <ian@emmons.mobi>");
 			File attachment = new File("README.md");
-			Emailer emailer = new Emailer();
 			BiPredicate<Path, BasicFileAttributes> reportsDirPredicate = (path, attrs)
 				-> attrs.isDirectory() && path.getFileName().toString().startsWith("reports-");
 			BiPredicate<Path, BasicFileAttributes> reportFilePredicate = (path, attrs)
@@ -50,7 +44,7 @@ public class Emailer {
 				.max(Comparator.comparing(Path::toString))
 				.flatMap(dir -> find(dir, reportFilePredicate).min(Comparator.comparing(Path::toString)))
 				.map(Emailer::readFileContent)
-				.ifPresent(reportBody -> emailer.send("Test Email", reportBody, attachment, "Test School", recipients));
+				.ifPresent(reportBody -> Emailer.send("Test Email", reportBody, attachment, "Test School", recipients));
 		} catch (Throwable ex) {
 			ex.printStackTrace();
 		}
@@ -72,15 +66,7 @@ public class Emailer {
 		}
 	}
 
-	public Emailer() throws IOException {
-		Properties props = Util.loadPropertiesFromResource(Util.CONFIGURATION_RESOURCE);
-		session = Session.getDefaultInstance(props);
-		fromAddr = props.getProperty("mail.from");
-		userName = props.getProperty("mail.user");
-		password = props.getProperty("mail.password");
-	}
-
-	public void send(String emailSubject, String emailBody, File attachment,
+	public static void send(String emailSubject, String emailBody, File attachment,
 			String schoolName, List<String> recipients) {
 		if (recipients == null || recipients.isEmpty()) {
 			return;
@@ -99,14 +85,14 @@ public class Emailer {
 				multipartContent.addBodyPart(attachmentPart);
 			}
 
-			MimeMessage message = new MimeMessage(session);
-			message.setFrom(new InternetAddress(fromAddr));
+			MimeMessage message = new MimeMessage(Config.inst().getEmailSession());
+			message.setFrom(new InternetAddress(Config.inst().getMailFromAddr()));
 			recipients.stream()
 				.forEach(recipient -> addRecipient(message, recipient));
 			message.setSubject(emailSubject);
 			message.setContent(multipartContent);
 
-			Transport.send(message, userName, password);
+			Transport.send(message, Config.inst().getMailUserName(), Config.inst().getMailPassword());
 			System.out.format("Email sent to %1$s (%2$s)%n",
 				schoolName, recipients.stream().collect(Collectors.joining(", ")));
 		} catch (MessagingException ex) {

@@ -70,14 +70,12 @@ public class ReportBuilder {
 		WHITE_VERDICT_COLUMN, GRAY_VERDICT_COLUMN
 	}
 
-	private final Emailer emailer;
 	private final DifferenceEngine engine;
 	private final File masterReport;
 	private final File reportDir;
 
 	public ReportBuilder(DifferenceEngine engine, File masterReport, File reportDir)
 			throws IOException {
-		emailer = new Emailer();
 		this.engine = Objects.requireNonNull(engine, "engine");
 		this.masterReport = Objects.requireNonNull(masterReport, "masterReport");
 		this.reportDir = Objects.requireNonNull(reportDir, "reportDir");
@@ -113,7 +111,7 @@ public class ReportBuilder {
 			var recipients = coaches.stream()
 				.map(Coach::prettyEmail)
 				.collect(Collectors.toUnmodifiableList());
-			emailer.send(emailSubject, emailBody, null, schoolName, recipients);
+			Emailer.send(emailSubject, emailBody, null, schoolName, recipients);
 		}
 	}
 
@@ -289,10 +287,6 @@ public class ReportBuilder {
 	}
 
 	private String createSchoolReport(String schoolName) {
-		var props = Util.loadPropertiesFromResource(Util.CONFIGURATION_RESOURCE);
-		var appName = props.getProperty("portal.application.name");
-		var permissionUrl = props.getProperty("portal.%1$s.permission.url".formatted(appName));
-
 		var sStudentsNotInP = engine.getSStudentsNotFoundInP().stream()
 			.filter(student -> student.school().equals(schoolName))
 			.map(student -> SCILYMPIAD_STUDENT_ROW_FORMAT.formatted(
@@ -304,6 +298,7 @@ public class ReportBuilder {
 				student.lastName(), student.firstName(), student.nickName(), student.grade()))
 			.collect(Collectors.joining());
 
+		var permissionUrl = Config.inst().getPortalPermissionUrl();
 		try {
 			var emailBody = Util.getResourceAsString(EMAIL_BODY_RESOURCE_NAME)
 				.formatted(schoolName, permissionUrl, sStudentsNotInP, pStudentsNotInS);

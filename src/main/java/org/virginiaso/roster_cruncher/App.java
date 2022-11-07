@@ -5,7 +5,6 @@ import java.io.IOException;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
@@ -13,7 +12,6 @@ import java.util.stream.Collectors;
 
 public class App {
 	private final File masterReportFile;
-	private final boolean sendReports;
 
 	public static void main(String[] args) {
 		try {
@@ -31,9 +29,7 @@ public class App {
 	}
 
 	private App(String[] args) throws CmdLineException {
-		Properties props = Util.loadPropertiesFromResource(Util.CONFIGURATION_RESOURCE);
-		masterReportFile = Util.parseFileArgument(props, "master.report.file");
-		sendReports = Boolean.parseBoolean(props.getProperty("send.reports", "false"));
+		masterReportFile = Config.inst().getMasterReportFile();
 	}
 
 	private void run() throws IOException, ParseException {
@@ -82,7 +78,7 @@ public class App {
 
 		schoolToCoachsMap.entrySet().stream().forEach(
 			schoolEntry -> rb.createSchoolReport(
-				schoolEntry.getKey(), schoolEntry.getValue(), sendReports));
+				schoolEntry.getKey(), schoolEntry.getValue(), Config.inst().sendReports()));
 		reportTimer.stopAndReport("Built reports");
 	}
 

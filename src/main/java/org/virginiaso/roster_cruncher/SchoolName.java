@@ -42,25 +42,24 @@ public class SchoolName {
 
 	public static void checkThatAllPortalSchoolsArePresentInSchoolNamesResource() {
 		try {
-			var props = Util.loadPropertiesFromResource(Util.CONFIGURATION_RESOURCE);
-			var reportDir = Util.parseFileArgument(props, "portal.report.dir");
+			var reportDir = Config.inst().getPortalReportDir();
 			if (!reportDir.isDirectory()) {
 				return;
 			}
-	
+
 			try (var stream = Files.find(reportDir.toPath(), Integer.MAX_VALUE,
 				(path, attrs) -> attrs.isRegularFile(), FileVisitOption.FOLLOW_LINKS)) {
 				if (stream.findAny().isEmpty()) {
 					return;
 				}
 			}
-	
+
 			var portalSchools = ConsolidatedCoachRetriever.getConsolidatedCoachList().stream()
 				.map(Coach::school)
 				.collect(Collectors.toUnmodifiableSet());
 			var canonicalSchools = TRANSLATIONS.values().stream()
 					.collect(Collectors.toUnmodifiableSet());
-	
+
 			var portalSchoolsNotInCanonical = Util.setDiff(portalSchools, canonicalSchools);
 			if (!portalSchoolsNotInCanonical.isEmpty()) {
 				throw new SchoolNameException(

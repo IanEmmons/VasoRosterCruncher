@@ -25,7 +25,6 @@ import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Row.MissingCellPolicy;
 
 public class Util {
-	public static final String CONFIGURATION_RESOURCE = "configuration.properties";
 	public static final Charset CHARSET = StandardCharsets.UTF_8;
 	public static final String JSON_MEDIA_TYPE = "application/json";
 	public static final CSVFormat CSV_FORMAT = CSVFormat.DEFAULT.builder()
@@ -114,12 +113,12 @@ public class Util {
 	}
 
 	public static File parseFileArgument(Properties props, String propName) {
-		String fileNameSetting = props.getProperty(propName);
-		if (fileNameSetting == null || fileNameSetting.isBlank()) {
+		String fileNameSetting = props.getProperty(propName, "").strip();
+		if (fileNameSetting.isEmpty()) {
 			throw new IllegalArgumentException(
 				"Configuration setting '%1$s' is missing".formatted(propName));
 		}
-		return new File(fileNameSetting.strip());
+		return new File(fileNameSetting);
 	}
 
 	public static String getStringCellValue(Row row, int columnOrdinal) {
