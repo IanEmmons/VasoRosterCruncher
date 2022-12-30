@@ -70,7 +70,7 @@ public class StudentRetrieverFactory {
 			.setPrettyPrinting()
 			.registerTypeAdapter(Student.class, new StudentSerializer())
 			.create();
-		return new PortalRetriever<Student>(gson, "roster",
+		return new PortalRetriever<>(gson, "roster",
 			new TypeToken<ReportResponse<Student>>(){}.getType());
 	}
 }

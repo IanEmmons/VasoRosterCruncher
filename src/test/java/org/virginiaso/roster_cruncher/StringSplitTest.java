@@ -9,6 +9,7 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 public class StringSplitTest {
+	@SuppressWarnings("static-method")
 	@ParameterizedTest
 	@MethodSource("stringSplitTestData")
 	public void stringSplitTest(String[] expectedOutput, String input, int limit) {

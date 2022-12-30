@@ -71,7 +71,7 @@ public class CoachRetrieverFactory {
 			.setPrettyPrinting()
 			.registerTypeAdapter(Coach.class, new CoachSerializer())
 			.create();
-		return new PortalRetriever<Coach>(gson, "coach",
+		return new PortalRetriever<>(gson, "coach",
 			new TypeToken<ReportResponse<Coach>>(){}.getType());
 	}
 }

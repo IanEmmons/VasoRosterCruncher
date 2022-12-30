@@ -74,8 +74,7 @@ public class ReportBuilder {
 	private final File masterReport;
 	private final File reportDir;
 
-	public ReportBuilder(DifferenceEngine engine, File masterReport, File reportDir)
-			throws IOException {
+	public ReportBuilder(DifferenceEngine engine, File masterReport, File reportDir) {
 		this.engine = Objects.requireNonNull(engine, "engine");
 		this.masterReport = Objects.requireNonNull(masterReport, "masterReport");
 		this.reportDir = Objects.requireNonNull(reportDir, "reportDir");
@@ -150,7 +149,7 @@ public class ReportBuilder {
 		autoSizeColumns(sheet);
 	}
 
-	private EnumMap<Style, CellStyle> createMatchesSheetStyles(Workbook workbook) {
+	private static EnumMap<Style, CellStyle> createMatchesSheetStyles(Workbook workbook) {
 		EnumMap<Style, CellStyle> result = new EnumMap<>(Style.class);
 
 		CellStyle white = workbook.createCellStyle();
@@ -177,7 +176,7 @@ public class ReportBuilder {
 		return result;
 	}
 
-	private void createNearMatchRowScilympiad(Sheet sheet, Student sStudent,
+	private static void createNearMatchRowScilympiad(Sheet sheet, Student sStudent,
 			Map<Integer, List<Student>> matches, EnumMap<Style, CellStyle> styles,
 			boolean isEvenSStudentIndex, List<Integer> portalRowNumbers) {
 		Row row = createNextRow(sheet);
@@ -207,7 +206,7 @@ public class ReportBuilder {
 					firstStyle, subsequentStyle, portalRowNumbers)));
 	}
 
-	private void createNearMatchRowPortal(Sheet sheet, int distance,
+	private static void createNearMatchRowPortal(Sheet sheet, int distance,
 			Student pStudent, CellStyle firstStyle, CellStyle subsequentStyle,
 			List<Integer> portalRowNumbers) {
 		Row row = createNextRow(sheet);
@@ -242,7 +241,7 @@ public class ReportBuilder {
 		}
 	}
 
-	private void setValidation(Sheet sheet, List<Integer> portalRowNumbers) {
+	private static void setValidation(Sheet sheet, List<Integer> portalRowNumbers) {
 		CellRangeAddressList addressList = new CellRangeAddressList();
 		for (int rowNumber : portalRowNumbers) {
 			addressList.addCellRangeAddress(
@@ -259,7 +258,7 @@ public class ReportBuilder {
 		sheet.addValidationData(validation);
 	}
 
-	private void createIgnoredSheet(Workbook workbook, Set<Student> ignoredSStudents) {
+	private static void createIgnoredSheet(Workbook workbook, Set<Student> ignoredSStudents) {
 		Sheet sheet = workbook.createSheet(IGNORED_SHEET_TITLE);
 		setHeadings(sheet, HEADINGS_FOR_STUDENTS_IN_ONLY_ONE_SYSTEM);
 		ignoredSStudents.stream()
@@ -313,7 +312,7 @@ public class ReportBuilder {
 		}
 	}
 
-	private void createScilympiadStudentRow(Sheet sheet, Student student) {
+	private static void createScilympiadStudentRow(Sheet sheet, Student student) {
 		Row row = createNextRow(sheet);
 		createNextCell(row, CellType.STRING)
 			.setCellValue(student.school());
@@ -326,7 +325,7 @@ public class ReportBuilder {
 			.setCellValue(student.grade());
 	}
 
-	private void createPortalStudentRow(Sheet sheet, Student student) {
+	private static void createPortalStudentRow(Sheet sheet, Student student) {
 		Row row = createNextRow(sheet);
 		createNextCell(row, CellType.STRING)
 			.setCellValue(student.school());
@@ -340,7 +339,7 @@ public class ReportBuilder {
 			.setCellValue(student.grade());
 	}
 
-	private void setHeadings(Sheet sheet, String... headings) {
+	private static void setHeadings(Sheet sheet, String... headings) {
 		Row row = createNextRow(sheet);
 		for (String heading : headings) {
 			createNextCell(row, CellType.STRING)
@@ -348,20 +347,20 @@ public class ReportBuilder {
 		}
 	}
 
-	private Row createNextRow(Sheet sheet) {
+	private static Row createNextRow(Sheet sheet) {
 		// The result from getLastRowNum() does not include the +1:
 		int lastRowNum = sheet.getLastRowNum();
 		return sheet.createRow(
 			(lastRowNum == -1) ? 0 : lastRowNum + 1);
 	}
 
-	private Cell createNextCell(Row row, CellType cellType, CellStyle cellStyle) {
+	private static Cell createNextCell(Row row, CellType cellType, CellStyle cellStyle) {
 		Cell cell = createNextCell(row, cellType);
 		cell.setCellStyle(cellStyle);
 		return cell;
 	}
 
-	private Cell createNextCell(Row row, CellType cellType) {
+	private static Cell createNextCell(Row row, CellType cellType) {
 		// The result from getLastCellNum() already includes the +1:
 		int lastCellNum = row.getLastCellNum();
 		return row.createCell(
@@ -369,7 +368,7 @@ public class ReportBuilder {
 			cellType);
 	}
 
-	private void autoSizeColumns(Sheet sheet) {
+	private static void autoSizeColumns(Sheet sheet) {
 		for (int colNum = 0; colNum < sheet.getRow(0).getLastCellNum(); ++colNum) {
 			sheet.autoSizeColumn(colNum);
 		}

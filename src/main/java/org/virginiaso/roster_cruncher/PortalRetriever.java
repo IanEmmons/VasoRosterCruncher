@@ -114,11 +114,11 @@ public class PortalRetriever<Item> {
 			JsonWriter jwtr = new JsonWriter(wtr);
 		) {
 			jwtr.setIndent("\t");
-			gson.toJson(new ReportResponse<Item>(reportItems), reportResponseType, jwtr);
+			gson.toJson(new ReportResponse<>(reportItems), reportResponseType, jwtr);
 		}
 	}
 
-	private void retrieveReport() throws IOException {
+	private void retrieveReport() {
 		for (int currentPage = 1;; ++currentPage) {
 			var httpRequest = getHttpRequest(currentPage);
 			HttpClient.newHttpClient()

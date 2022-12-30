@@ -64,7 +64,7 @@ public class ScilympiadParser {
 
 	private ScilympiadParser() {}	// Prevents Instantiation
 
-	public static Set<Student> readLatestRosterFile() throws IOException {
+	public static Set<Student> readLatestRosterFile() {
 		var reportDir = Config.inst().getScilympiadReportDir();
 		return Stream.of(Config.inst().getScilympiadSuffixes())
 			.map(String::strip)

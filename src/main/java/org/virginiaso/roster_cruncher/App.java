@@ -28,6 +28,7 @@ public class App {
 		}
 	}
 
+	/** @throws CmdLineException If the syntax of the command line is incorrect. */
 	private App(String[] args) throws CmdLineException {
 		masterReportFile = Config.inst().getMasterReportFile();
 	}
@@ -82,7 +83,7 @@ public class App {
 		reportTimer.stopAndReport("Built reports");
 	}
 
-	private void checkForMissingSchoolsInCoachesFile(Set<String> schools,
+	private static void checkForMissingSchoolsInCoachesFile(Set<String> schools,
 			List<Student> pStudents, Set<Student> sStudents) {
 		Set<String> schoolNames = new TreeSet<>();
 		pStudents.stream()
