@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.function.BiPredicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -25,6 +26,7 @@ import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Row.MissingCellPolicy;
 import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.util.StringUtil;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
 public class ScilympiadParser {
@@ -112,7 +114,7 @@ public class ScilympiadParser {
 				if (firstColumn.isEmpty()) {
 					// Do nothing
 				} else if (school.isPresent()) {
-					currentSchool = SchoolName.normalize(school.get());
+					currentSchool = school.get();
 				} else if (teamName.isPresent()) {
 					// Do nothing
 				} else if (teamNumber.isEmpty()) {
@@ -128,8 +130,23 @@ public class ScilympiadParser {
 			throw new UncheckedIOException(ex);
 		}
 
+		var scylimpiadSchools = result.stream()
+			.map(Student::school)
+			.collect(Collectors.toCollection(TreeSet::new));
+		SchoolName.checkForUnmappedScylimpiadSchools(scylimpiadSchools);
+
+		var normalizedResult = result.stream()
+			.map(student -> new Student(
+				student.firstName(),
+				student.lastName(),
+				student.nickName(),
+				SchoolName.normalize(student.school()),
+				student.grade()))
+			.filter(student -> StringUtil.isNotBlank(student.school()))
+			.collect(Collectors.toUnmodifiableList());
+
 		timer.stopAndReport("Parsed Scilympiad student file");
-		return result;
+		return normalizedResult;
 	}
 
 	static String getCellValue(Row row, Column column) {

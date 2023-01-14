@@ -32,18 +32,18 @@ application {
 	mainClass = 'org.virginiaso.roster_cruncher.App'
 }
 
-task crunchRosters(type: JavaExec) {
-	dependsOn 'classes'
-	mainClass = 'org.virginiaso.roster_cruncher.App'
-	classpath = sourceSets.main.runtimeClasspath
-	systemProperty 'mail.password', "$mailPassword"
-}
-
 task getPortalRoster(type: JavaExec) {
 	dependsOn 'classes'
 	mainClass = 'org.virginiaso.roster_cruncher.PortalRetriever'
 	classpath = sourceSets.main.runtimeClasspath
 	systemProperty 'portal.password', "$portalPassword"
+}
+
+task crunchRosters(type: JavaExec) {
+	dependsOn 'classes'
+	mainClass = 'org.virginiaso.roster_cruncher.App'
+	classpath = sourceSets.main.runtimeClasspath
+	systemProperty 'mail.password', "$mailPassword"
 }
 
 task sendTestEmail(type: JavaExec) {
@@ -53,6 +53,6 @@ task sendTestEmail(type: JavaExec) {
 	systemProperty 'mail.password', "$mailPassword"
 }
 
-tasks.named('test') {
+test {
 	useJUnitPlatform()
 }

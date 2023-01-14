@@ -9,6 +9,7 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class App {
 	private final File masterReportFile;
@@ -34,8 +35,6 @@ public class App {
 	}
 
 	private void run() throws IOException, ParseException {
-		SchoolName.checkThatAllPortalSchoolsArePresentInSchoolNamesResource();
-
 		Set<Coach> coaches = ConsolidatedCoachRetriever.getConsolidatedCoachList();
 		Map<String, List<Coach>> schoolToCoachsMap = coaches.stream().collect(
 			Collectors.groupingBy(Coach::school, TreeMap::new, Collectors.toList()));
@@ -85,13 +84,9 @@ public class App {
 
 	private static void checkForMissingSchoolsInCoachesFile(Set<String> schools,
 			List<Student> pStudents, Set<Student> sStudents) {
-		Set<String> schoolNames = new TreeSet<>();
-		pStudents.stream()
-			.map(pStudent -> pStudent.school())
-			.forEach(schoolNames::add);
-		sStudents.stream()
-			.map(sStudent -> sStudent.school())
-			.forEach(schoolNames::add);
+		var schoolNames = Stream.concat(pStudents.stream(), sStudents.stream())
+			.map(Student::school)
+			.collect(Collectors.toCollection(TreeSet::new));
 		List<String> unknownSchools = schoolNames.stream()
 			.filter(schoolName -> schools.stream().noneMatch(
 				school -> school.equalsIgnoreCase(schoolName)))
