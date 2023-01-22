@@ -71,11 +71,13 @@ public class ReportBuilder {
 	}
 
 	private final DifferenceEngine engine;
+	private final Set<Student> sStudents;
 	private final File masterReport;
 	private final File reportDir;
 
-	public ReportBuilder(DifferenceEngine engine, File masterReport, File reportDir) {
+	public ReportBuilder(DifferenceEngine engine, Set<Student> sStudents, File masterReport, File reportDir) {
 		this.engine = Objects.requireNonNull(engine, "engine");
+		this.sStudents = sStudents;
 		this.masterReport = Objects.requireNonNull(masterReport, "masterReport");
 		this.reportDir = Objects.requireNonNull(reportDir, "reportDir");
 	}
@@ -100,7 +102,14 @@ public class ReportBuilder {
 			.filter(student -> student.school().equals(schoolName))
 			.count();
 		if (numSStudentsNotFoundInP <= 0) {
-			System.out.format("No missing permissions: %1$s%n", schoolName);
+			var numSStudentsOnSchoolTeams = sStudents.stream()
+				.filter(student -> student.school().equals(schoolName))
+				.count();
+			if (numSStudentsOnSchoolTeams > 0) {
+				System.out.format("No missing permissions: %1$s%n", schoolName);
+			} else {
+				System.out.format("Teams not set up in Scilympiad yet: %1$s%n", schoolName);
+			}
 			return;
 		}
 

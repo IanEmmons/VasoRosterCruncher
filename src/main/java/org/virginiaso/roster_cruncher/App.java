@@ -73,7 +73,7 @@ public class App {
 			engine.getSStudentsNotFoundInP().size());
 
 		Stopwatch reportTimer = new Stopwatch();
-		ReportBuilder rb = new ReportBuilder(engine, masterReportFile, getReportDir());
+		ReportBuilder rb = new ReportBuilder(engine, sStudents, masterReportFile, getReportDir());
 		rb.createMasterReport(ignoredSStudents);
 
 		schoolToCoachsMap.entrySet().stream().forEach(
