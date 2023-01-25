@@ -48,7 +48,7 @@ public class IgnoredScilympiadStudentParser {
 					getNumericCellValue(row, Column.GRADE)))
 				.collect(Collectors.toCollection(TreeSet::new));
 
-			timer.stopAndReport("Parsed master report");
+			timer.stopAndReport("Parsed ignored Scilympiad students");
 			return Collections.unmodifiableSet(result);
 		}
 	}
