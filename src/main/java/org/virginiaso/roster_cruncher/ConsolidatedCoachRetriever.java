@@ -29,6 +29,7 @@ public class ConsolidatedCoachRetriever {
 			.filter(coach -> portalSchools.contains(coach.school()));
 
 		return Stream.concat(portalCoaches.stream(), extraCoachesForSchoolsFoundInPortal)
+			.filter(coach -> !coach.email().equalsIgnoreCase("quinn.mcfee@gmail.com"))
 			.collect(Collectors.toCollection(() -> new TreeSet<>()));
 	}
 
