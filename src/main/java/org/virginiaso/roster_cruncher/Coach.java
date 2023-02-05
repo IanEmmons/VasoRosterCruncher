@@ -4,9 +4,6 @@ import java.util.Objects;
 
 public record Coach(String firstName, String lastName, String email, String school)
 		implements Comparable<Coach> {
-	public Coach(String fullName, String email, String school) {
-		this("", fullName, email, school);
-	}
 
 	public String prettyEmail() {
 		var name = String.join(" ", firstName, lastName);

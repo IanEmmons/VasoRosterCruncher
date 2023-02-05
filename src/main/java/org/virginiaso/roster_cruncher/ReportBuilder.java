@@ -38,7 +38,10 @@ public class ReportBuilder {
 	private static final String P_NOT_S_SHEET_TITLE = "In Portal, not Scilympiad";
 	private static final String S_NOT_P_SHEET_TITLE = "In Scilympiad, not Portal";
 	static final String MATCHES_SHEET_TITLE = "Adjudicated Matches";
-	static final String IGNORED_SHEET_TITLE = "Ignored Scilympiad Students";
+	static final String SCHOOL_NAME_SHEET_TITLE = "School Name Mapping";
+	static final String EXTRA_COACH_SHEET_TITLE = "Extra Coaches";
+	static final String IGNORED_STUDENT_SHEET_TITLE = "Ignored Scilympiad Students";
+	static final String IGNORED_COACH_SHEET_TITLE = "Ignored Coaches";
 	static final String SCILYMPIAD_ROW_LABEL = "Scilympiad:";
 	static final String PORTAL_ROW_LABEL = "Portal:";
 	private static final int VERDICT_COLUMN_NUMBER = 7;
@@ -60,8 +63,17 @@ public class ReportBuilder {
 					<td>%4$d</td>
 				</tr>
 		""";
+	private static final String[] HEADINGS_FOR_SCHOOL_NAME_MAPPINGS = {
+		"Scilympiad Name", "Canonical Name"
+	};
 	private static final String[] HEADINGS_FOR_STUDENTS_IN_ONLY_ONE_SYSTEM = {
 		"School", "Last Name", "First Name", "Nickname", "Grade"
+	};
+	private static final String[] HEADINGS_FOR_EXTRA_COACHES = {
+		"School", "Last Name", "First Name", "Email"
+	};
+	private static final String[] HEADINGS_FOR_IGNORED_COACHES = {
+		"Coach Email"
 	};
 
 	private static enum Style {
@@ -72,20 +84,29 @@ public class ReportBuilder {
 
 	private final DifferenceEngine engine;
 	private final Set<Student> sStudents;
+	private final Set<Coach> extraCoaches;
+	private final Set<String> ignoredCoaches;
 	private final File masterReport;
 	private final File reportDir;
 
-	public ReportBuilder(DifferenceEngine engine, Set<Student> sStudents, File masterReport, File reportDir) {
+	public ReportBuilder(DifferenceEngine engine, Set<Student> sStudents,
+			Set<Coach> extraCoaches, Set<String> ignoredCoaches, File masterReport,
+			File reportDir) {
 		this.engine = Objects.requireNonNull(engine, "engine");
 		this.sStudents = sStudents;
+		this.extraCoaches = extraCoaches;
+		this.ignoredCoaches = ignoredCoaches;
 		this.masterReport = Objects.requireNonNull(masterReport, "masterReport");
 		this.reportDir = Objects.requireNonNull(reportDir, "reportDir");
 	}
 
-	public void createMasterReport(Set<Student> ignoredSStudents) {
+	public void createMasterReport(Map<String, String> schoolNameMapping, Set<Student> ignoredSStudents) {
 		try (Workbook workbook = new XSSFWorkbook(XSSFWorkbookType.XLSX)) {
 			createMatchesSheet(workbook);
-			createIgnoredSheet(workbook, ignoredSStudents);
+			createSchoolNameMappingSheet(workbook, schoolNameMapping);
+			createExtraCoachesSheet(workbook, extraCoaches);
+			createIgnoredCoachesSheet(workbook, ignoredCoaches);
+			createIgnoredStudentsSheet(workbook, ignoredSStudents);
 			createSNotInPSheet(workbook);
 			createPNotInSSheet(workbook);
 
@@ -117,6 +138,7 @@ public class ReportBuilder {
 		if (sendEmail) {
 			var emailSubject = EMAIL_SUBJECT_FORMAT.formatted(schoolName);
 			var recipients = coaches.stream()
+				.filter(coach -> !ignoredCoaches.contains(coach.email()))
 				.map(Coach::prettyEmail)
 				.collect(Collectors.toUnmodifiableList());
 			Emailer.send(emailSubject, emailBody, null, schoolName, recipients);
@@ -267,11 +289,39 @@ public class ReportBuilder {
 		sheet.addValidationData(validation);
 	}
 
-	private static void createIgnoredSheet(Workbook workbook, Set<Student> ignoredSStudents) {
-		Sheet sheet = workbook.createSheet(IGNORED_SHEET_TITLE);
+	private static void createSchoolNameMappingSheet(Workbook workbook, Map<String, String> schoolNameMapping) {
+		Sheet sheet = workbook.createSheet(SCHOOL_NAME_SHEET_TITLE);
+		setHeadings(sheet, HEADINGS_FOR_SCHOOL_NAME_MAPPINGS);
+		schoolNameMapping.entrySet().stream()
+			.filter(mapping -> !mapping.getValue().equals(mapping.getKey()))
+			.forEach(mapping -> createSchoolNameMappingRow(sheet, mapping.getKey(), mapping.getValue()));
+		sheet.createFreezePane(0, 1);
+		autoSizeColumns(sheet);
+	}
+
+	private static void createIgnoredStudentsSheet(Workbook workbook, Set<Student> ignoredSStudents) {
+		Sheet sheet = workbook.createSheet(IGNORED_STUDENT_SHEET_TITLE);
 		setHeadings(sheet, HEADINGS_FOR_STUDENTS_IN_ONLY_ONE_SYSTEM);
 		ignoredSStudents.stream()
 			.forEach(student -> createScilympiadStudentRow(sheet, student));
+		sheet.createFreezePane(0, 1);
+		autoSizeColumns(sheet);
+	}
+
+	private static void createExtraCoachesSheet(Workbook workbook, Set<Coach> extraCoaches) {
+		Sheet sheet = workbook.createSheet(EXTRA_COACH_SHEET_TITLE);
+		setHeadings(sheet, HEADINGS_FOR_EXTRA_COACHES);
+		extraCoaches.stream()
+			.forEach(coach -> createExtraCoachRow(sheet, coach));
+		sheet.createFreezePane(0, 1);
+		autoSizeColumns(sheet);
+	}
+
+	private static void createIgnoredCoachesSheet(Workbook workbook, Set<String> ignoredCoaches) {
+		Sheet sheet = workbook.createSheet(IGNORED_COACH_SHEET_TITLE);
+		setHeadings(sheet, HEADINGS_FOR_IGNORED_COACHES);
+		ignoredCoaches.stream()
+			.forEach(email -> createIgnoredCoachRow(sheet, email));
 		sheet.createFreezePane(0, 1);
 		autoSizeColumns(sheet);
 	}
@@ -346,6 +396,32 @@ public class ReportBuilder {
 			.setCellValue(student.nickName());
 		createNextCell(row, CellType.NUMERIC)
 			.setCellValue(student.grade());
+	}
+
+	private static void createExtraCoachRow(Sheet sheet, Coach coach) {
+		Row row = createNextRow(sheet);
+		createNextCell(row, CellType.STRING)
+			.setCellValue(coach.school());
+		createNextCell(row, CellType.STRING)
+			.setCellValue(coach.lastName());
+		createNextCell(row, CellType.STRING)
+			.setCellValue(coach.firstName());
+		createNextCell(row, CellType.STRING)
+			.setCellValue(coach.email());
+	}
+
+	private static void createIgnoredCoachRow(Sheet sheet, String coachEmail) {
+		Row row = createNextRow(sheet);
+		createNextCell(row, CellType.STRING)
+			.setCellValue(coachEmail);
+	}
+
+	private static void createSchoolNameMappingRow(Sheet sheet, String scilypiadName, String canonicalName) {
+		Row row = createNextRow(sheet);
+		createNextCell(row, CellType.STRING)
+			.setCellValue(scilypiadName);
+		createNextCell(row, CellType.STRING)
+		.setCellValue(canonicalName);
 	}
 
 	private static void setHeadings(Sheet sheet, String... headings) {

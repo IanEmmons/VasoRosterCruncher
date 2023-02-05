@@ -19,7 +19,6 @@ import java.util.regex.Pattern;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-import org.apache.commons.csv.CSVFormat;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Row.MissingCellPolicy;
@@ -27,11 +26,6 @@ import org.apache.poi.ss.usermodel.Row.MissingCellPolicy;
 public class Util {
 	public static final Charset CHARSET = StandardCharsets.UTF_8;
 	public static final String JSON_MEDIA_TYPE = "application/json";
-	public static final CSVFormat CSV_FORMAT = CSVFormat.DEFAULT.builder()
-		.setHeader()
-		.setIgnoreEmptyLines(true)
-		.setTrim(true)
-		.build();
 	private static final Pattern WHITESPACE = Pattern.compile("\\s\\s+");
 
 	private Util() {}	// prevent instantiation

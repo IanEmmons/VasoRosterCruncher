@@ -12,6 +12,7 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -66,15 +67,34 @@ public class ScilympiadParser {
 
 	private ScilympiadParser() {}	// Prevents Instantiation
 
-	public static Set<Student> readLatestRosterFile() {
+	public static Set<Student> readLatestRosterFile(Map<String, String> schoolNameMapping) {
+		var timer = new Stopwatch();
 		var reportDir = Config.inst().getScilympiadReportDir();
-		return Stream.of(Config.inst().getScilympiadSuffixes())
+		var result = Stream.of(Config.inst().getScilympiadSuffixes())
 			.map(String::strip)
 			.map(suffix -> getLatestReportFileForSuffix(reportDir, suffix))
 			.filter(Objects::nonNull)
 			.map(ScilympiadParser::parse)
 			.flatMap(List::stream)
 			.collect(Collectors.toUnmodifiableSet());
+
+		var scylimpiadSchools = result.stream()
+			.map(Student::school)
+			.collect(Collectors.toCollection(TreeSet::new));
+		checkForUnmappedScylimpiadSchools(scylimpiadSchools, schoolNameMapping);
+
+		var normalizedResult = result.stream()
+			.map(student -> new Student(
+				student.firstName(),
+				student.lastName(),
+				student.nickName(),
+				normalize(student.school(), schoolNameMapping),
+				student.grade()))
+			.filter(student -> StringUtil.isNotBlank(student.school()))
+			.collect(Collectors.toUnmodifiableSet());
+
+		timer.stopAndReport("Parsed Scilympiad student files");
+		return normalizedResult;
 	}
 
 	private static File getLatestReportFileForSuffix(File reportDir, String suffix) {
@@ -94,8 +114,6 @@ public class ScilympiadParser {
 
 	private static List<Student> parse(File scilympiadStudentFile) {
 		List<Student> result = new ArrayList<>();
-		var timer = new Stopwatch();
-
 		try (
 			InputStream is = new FileInputStream(scilympiadStudentFile);
 			Workbook workbook = new XSSFWorkbook(is);
@@ -129,24 +147,7 @@ public class ScilympiadParser {
 		} catch (IOException ex) {
 			throw new UncheckedIOException(ex);
 		}
-
-		var scylimpiadSchools = result.stream()
-			.map(Student::school)
-			.collect(Collectors.toCollection(TreeSet::new));
-		SchoolName.checkForUnmappedScylimpiadSchools(scylimpiadSchools);
-
-		var normalizedResult = result.stream()
-			.map(student -> new Student(
-				student.firstName(),
-				student.lastName(),
-				student.nickName(),
-				SchoolName.normalize(student.school()),
-				student.grade()))
-			.filter(student -> StringUtil.isNotBlank(student.school()))
-			.collect(Collectors.toUnmodifiableList());
-
-		timer.stopAndReport("Parsed Scilympiad student file");
-		return normalizedResult;
+		return result;
 	}
 
 	static String getCellValue(Row row, Column column) {
@@ -175,5 +176,28 @@ public class ScilympiadParser {
 		return m.matches()
 			? Optional.of(m.group(1))
 			: Optional.empty();
+	}
+
+	private static void checkForUnmappedScylimpiadSchools(Set<String> scylimpiadSchools,
+			Map<String, String> schoolNameMapping) {
+		var errMsg = scylimpiadSchools.stream()
+			.filter(school -> !schoolNameMapping.containsKey(school))
+			.collect(Collectors.joining("%n   ".formatted()));
+		if (!errMsg.isEmpty()) {
+			throw new SchoolNameException(
+				"These Scilympid schools have not been mapped to a canonical name:%n   %1$s",
+				errMsg);
+		}
+	}
+
+	private static String normalize(String scilympiadSchoolName,
+			Map<String, String> schoolNameMapping) {
+		var canonicalName = schoolNameMapping.get(scilympiadSchoolName);
+		if (canonicalName == null) {
+			throw new SchoolNameException(
+				"The Scilympid school name '%1$s' has not been mapped to a canonical name",
+				scilympiadSchoolName);
+		}
+		return canonicalName;
 	}
 }

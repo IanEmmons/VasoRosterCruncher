@@ -35,13 +35,17 @@ public class App {
 	}
 
 	private void run() throws IOException, ParseException {
-		Set<Coach> coaches = ConsolidatedCoachRetriever.getConsolidatedCoachList();
-		Map<String, List<Coach>> schoolToCoachsMap = coaches.stream().collect(
-			Collectors.groupingBy(Coach::school, TreeMap::new, Collectors.toList()));
 		List<Match> matches = Match.parse(masterReportFile);
+		Map<String, String> schoolNameMapping = SchoolNameMappingParser.parse(masterReportFile);
+		Set<Coach> extraCoaches = ExtraCoachParser.parse(masterReportFile);
+		Set<String> ignoredCoaches = IgnoredCoachParser.parse(masterReportFile);
 		Set<Student> ignoredSStudents = IgnoredScilympiadStudentParser.parse(masterReportFile);
 		List<Student> pStudents = StudentRetrieverFactory.create().readLatestReportFile();
-		Set<Student> sStudents = ScilympiadParser.readLatestRosterFile();
+		Set<Student> sStudents = ScilympiadParser.readLatestRosterFile(schoolNameMapping);
+
+		Set<Coach> coaches = getConsolidatedCoachList(extraCoaches);
+		Map<String, List<Coach>> schoolToCoachsMap = coaches.stream().collect(
+			Collectors.groupingBy(Coach::school, TreeMap::new, Collectors.toList()));
 
 		sStudents = sStudents.stream()
 			.filter(student -> !ignoredSStudents.contains(student))
@@ -73,13 +77,28 @@ public class App {
 			engine.getSStudentsNotFoundInP().size());
 
 		Stopwatch reportTimer = new Stopwatch();
-		ReportBuilder rb = new ReportBuilder(engine, sStudents, masterReportFile, getReportDir());
-		rb.createMasterReport(ignoredSStudents);
+		ReportBuilder rb = new ReportBuilder(engine, sStudents, extraCoaches, ignoredCoaches,
+			masterReportFile, getReportDir());
+		rb.createMasterReport(schoolNameMapping, ignoredSStudents);
 
 		schoolToCoachsMap.entrySet().stream().forEach(
 			schoolEntry -> rb.createSchoolReport(
 				schoolEntry.getKey(), schoolEntry.getValue(), Config.inst().sendReports()));
 		reportTimer.stopAndReport("Built reports");
+	}
+
+	public static Set<Coach> getConsolidatedCoachList(Set<Coach> extraCoaches) throws IOException {
+		var portalCoaches = CoachRetrieverFactory.create().readLatestReportFile();
+
+		var portalSchools = portalCoaches.stream()
+			.map(Coach::school)
+			.collect(Collectors.toUnmodifiableSet());
+
+		var extraCoachesForSchoolsFoundInPortal = extraCoaches.stream()
+			.filter(coach -> portalSchools.contains(coach.school()));
+
+		return Stream.concat(portalCoaches.stream(), extraCoachesForSchoolsFoundInPortal)
+			.collect(Collectors.toCollection(TreeSet::new));
 	}
 
 	private static void checkForMissingSchoolsInCoachesFile(Set<String> schools,

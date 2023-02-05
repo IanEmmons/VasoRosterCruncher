@@ -13,18 +13,14 @@ import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
-public class IgnoredScilympiadStudentParser {
+public class IgnoredCoachParser {
 	private static enum Column {
-		SCHOOL,
-		LAST_NAME,
-		FIRST_NAME,
-		NICKNAME,
-		GRADE
+		COACH_EMAIL
 	}
 
-	private IgnoredScilympiadStudentParser() {}	// prevent instantiation
+	private IgnoredCoachParser() {}	// prevent instantiation
 
-	public static Set<Student> parse(File masterReportFile)
+	public static Set<String> parse(File masterReportFile)
 			throws IOException, ParseException {
 		if (!masterReportFile.isFile()) {
 			return Collections.emptySet();
@@ -34,30 +30,21 @@ public class IgnoredScilympiadStudentParser {
 		}
 	}
 
-	public static Set<Student> parse(InputStream masterReportStream)
+	public static Set<String> parse(InputStream masterReportStream)
 			throws IOException, ParseException {
 		Stopwatch timer = new Stopwatch();
 		try (Workbook workbook = new XSSFWorkbook(masterReportStream)) {
-			var result = Util.asStream(workbook.getSheet(ReportBuilder.IGNORED_STUDENT_SHEET_TITLE))
+			var result = Util.asStream(workbook.getSheet(ReportBuilder.IGNORED_COACH_SHEET_TITLE))
 				.skip(1)	// skip column headings
-				.map(row -> new Student(
-					getStringCellValue(row, Column.FIRST_NAME),
-					getStringCellValue(row, Column.LAST_NAME),
-					getStringCellValue(row, Column.NICKNAME),
-					getStringCellValue(row, Column.SCHOOL),
-					getNumericCellValue(row, Column.GRADE)))
+				.map(row -> getStringCellValue(row, Column.COACH_EMAIL))
 				.collect(Collectors.toCollection(TreeSet::new));
 
-			timer.stopAndReport("Parsed ignored Scilympiad students");
+			timer.stopAndReport("Parsed ignored coaches");
 			return Collections.unmodifiableSet(result);
 		}
 	}
 
 	private static String getStringCellValue(Row row, Column column) {
 		return Util.getStringCellValue(row, column.ordinal());
-	}
-
-	private static int getNumericCellValue(Row row, Column column) {
-		return Util.getNumericCellValue(row, column.ordinal());
 	}
 }
