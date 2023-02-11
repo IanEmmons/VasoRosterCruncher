@@ -46,8 +46,6 @@ public class ReportBuilder {
 	static final String PORTAL_ROW_LABEL = "Portal:";
 	private static final int VERDICT_COLUMN_NUMBER = 7;
 	private static final String[] VERDICT_COLUMN_VALUES = {"—", "Different", "Same"};
-	private static final String EMAIL_SUBJECT_FORMAT = "Missing VASO Student Permissions at %1$s";
-	private static final String EMAIL_BODY_RESOURCE_NAME = "EmailBody.html";
 	private static final String SCILYMPIAD_STUDENT_ROW_FORMAT = """
 				<tr>
 					<td>%1$s</td>
@@ -136,7 +134,7 @@ public class ReportBuilder {
 
 		var emailBody = createSchoolReport(schoolName);
 		if (sendEmail) {
-			var emailSubject = EMAIL_SUBJECT_FORMAT.formatted(schoolName);
+			var emailSubject = Config.inst().getMailSubject().formatted(schoolName);
 			var recipients = coaches.stream()
 				.filter(coach -> !ignoredCoaches.contains(coach.email()))
 				.map(Coach::prettyEmail)
@@ -356,10 +354,12 @@ public class ReportBuilder {
 				student.lastName(), student.firstName(), student.nickName(), student.grade()))
 			.collect(Collectors.joining());
 
-		var permissionUrl = Config.inst().getPortalPermissionUrl();
 		try {
-			var emailBody = Util.getResourceAsString(EMAIL_BODY_RESOURCE_NAME)
-				.formatted(schoolName, permissionUrl, sStudentsNotInP, pStudentsNotInS);
+			var emailBodyResourceName = Config.inst().getMailBodyResourceName();
+			var permissionUrl = Config.inst().getPortalPermissionUrl();
+			var mtgSummonsUrl = Config.inst().getMailMtgSummonsUrl();
+			var emailBody = Util.getResourceAsString(emailBodyResourceName)
+				.formatted(schoolName, permissionUrl, sStudentsNotInP, pStudentsNotInS, mtgSummonsUrl);
 
 			Path file = getReportFile(schoolName).toPath();
 			Files.writeString(file, emailBody, StandardCharsets.UTF_8,

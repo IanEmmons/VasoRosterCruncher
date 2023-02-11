@@ -24,6 +24,9 @@ public class Config {
 	private final String mailFromAddr;
 	private final String mailUserName;
 	private final String mailPassword;
+	private final String mailSubject;
+	private final String mailBodyResourceName;
+	private final String mailMtgSummonsUrl;
 	private final String scilympiadSiteName;
 	private final File scilympiadReportDir;
 	private final String[] scilympiadSuffixes;
@@ -52,6 +55,9 @@ public class Config {
 		mailFromAddr = props.getProperty("mail.from");
 		mailUserName = props.getProperty("mail.user");
 		mailPassword = props.getProperty("mail.password");
+		mailSubject = props.getProperty("mail.subject");
+		mailBodyResourceName = props.getProperty("mail.body.resource.name");
+		mailMtgSummonsUrl = props.getProperty("mail.meetingSummonsUrl");
 		var permissionUrlPropKey = "portal.%1$s.permission.url".formatted(portalAppName);
 		portalPermissionUrl = props.getProperty(permissionUrlPropKey);
 		scilympiadSiteName = props.getProperty("scilympiad.site");
@@ -114,6 +120,18 @@ public class Config {
 
 	public String getMailPassword() {
 		return mailPassword;
+	}
+
+	public String getMailSubject() {
+		return mailSubject;
+	}
+
+	public String getMailBodyResourceName() {
+		return mailBodyResourceName;
+	}
+
+	public String getMailMtgSummonsUrl() {
+		return mailMtgSummonsUrl;
 	}
 
 	public String getScilympiadSiteName() {
