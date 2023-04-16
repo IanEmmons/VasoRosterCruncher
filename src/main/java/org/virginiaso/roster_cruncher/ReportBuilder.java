@@ -1,5 +1,10 @@
 package org.virginiaso.roster_cruncher;
 
+import static org.virginiaso.roster_cruncher.MasterReportSheet.autoSizeColumns;
+import static org.virginiaso.roster_cruncher.MasterReportSheet.createNextCell;
+import static org.virginiaso.roster_cruncher.MasterReportSheet.createNextRow;
+import static org.virginiaso.roster_cruncher.MasterReportSheet.setHeadings;
+
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -18,7 +23,6 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 
-import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.ss.usermodel.DataValidation;
@@ -35,13 +39,10 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbookType;
 
 public class ReportBuilder {
-	private static final String P_NOT_S_SHEET_TITLE = "In Portal, not Scilympiad";
-	private static final String S_NOT_P_SHEET_TITLE = "In Scilympiad, not Portal";
 	static final String MATCHES_SHEET_TITLE = "Adjudicated Matches";
-	static final String SCHOOL_NAME_SHEET_TITLE = "School Name Mapping";
-	static final String EXTRA_COACH_SHEET_TITLE = "Extra Coaches";
-	static final String IGNORED_STUDENT_SHEET_TITLE = "Ignored Scilympiad Students";
-	static final String IGNORED_COACH_SHEET_TITLE = "Ignored Coaches";
+	private static final String[] MATCHES_SHEET_HEADINGS = { "Source", "Distance",
+		"School", "Last Name", "First Name", "Nickname", "Grade", "Verdict"
+	};
 	static final String SCILYMPIAD_ROW_LABEL = "Scilympiad:";
 	static final String PORTAL_ROW_LABEL = "Portal:";
 	private static final int VERDICT_COLUMN_NUMBER = 7;
@@ -61,18 +62,6 @@ public class ReportBuilder {
 					<td>%4$d</td>
 				</tr>
 		""";
-	private static final String[] HEADINGS_FOR_SCHOOL_NAME_MAPPINGS = {
-		"Scilympiad Name", "Canonical Name"
-	};
-	private static final String[] HEADINGS_FOR_STUDENTS_IN_ONLY_ONE_SYSTEM = {
-		"School", "Last Name", "First Name", "Nickname", "Grade"
-	};
-	private static final String[] HEADINGS_FOR_EXTRA_COACHES = {
-		"School", "Last Name", "First Name", "Email"
-	};
-	private static final String[] HEADINGS_FOR_IGNORED_COACHES = {
-		"Coach Email"
-	};
 
 	private static enum Style {
 		WHITE, GRAY,
@@ -101,12 +90,12 @@ public class ReportBuilder {
 	public void createMasterReport(Map<String, String> schoolNameMapping, Set<Student> ignoredSStudents) {
 		try (Workbook workbook = new XSSFWorkbook(XSSFWorkbookType.XLSX)) {
 			createMatchesSheet(workbook);
-			createSchoolNameMappingSheet(workbook, schoolNameMapping);
-			createExtraCoachesSheet(workbook, extraCoaches);
-			createIgnoredCoachesSheet(workbook, ignoredCoaches);
-			createIgnoredStudentsSheet(workbook, ignoredSStudents);
-			createSNotInPSheet(workbook);
-			createPNotInSSheet(workbook);
+			new SchoolNameMappingSheet().create(workbook, schoolNameMapping);
+			new ExtraCoachSheet().create(workbook, extraCoaches);
+			new IgnoredCoachSheet().create(workbook, ignoredCoaches);
+			new IgnoredScilympiadStudentSheet().create(workbook, ignoredSStudents);
+			new SNotInPSheet().create(workbook, engine.getSStudentsNotFoundInP());
+			new PNotInSSheet().create(workbook, engine.getPStudentsNotFoundInS());
 
 			try (OutputStream os = new FileOutputStream(getReportFile(null))) {
 				workbook.write(os);
@@ -162,8 +151,7 @@ public class ReportBuilder {
 		EnumMap<Style, CellStyle> styles = createMatchesSheetStyles(workbook);
 
 		var sheet = workbook.createSheet(MATCHES_SHEET_TITLE);
-		setHeadings(sheet, "Source", "Distance", "School", "Last Name", "First Name",
-			"Nickname", "Grade", "Verdict");
+		setHeadings(sheet, List.of(MATCHES_SHEET_HEADINGS));
 		boolean isEvenSStudentIndex = false;
 		List<Integer> portalRowNumbers = new ArrayList<>();
 		for (var entry : matchesForDisplay.entrySet()) {
@@ -287,61 +275,6 @@ public class ReportBuilder {
 		sheet.addValidationData(validation);
 	}
 
-	private static void createSchoolNameMappingSheet(Workbook workbook, Map<String, String> schoolNameMapping) {
-		Sheet sheet = workbook.createSheet(SCHOOL_NAME_SHEET_TITLE);
-		setHeadings(sheet, HEADINGS_FOR_SCHOOL_NAME_MAPPINGS);
-		schoolNameMapping.entrySet().stream()
-			.filter(mapping -> !mapping.getValue().equals(mapping.getKey()))
-			.forEach(mapping -> createSchoolNameMappingRow(sheet, mapping.getKey(), mapping.getValue()));
-		sheet.createFreezePane(0, 1);
-		autoSizeColumns(sheet);
-	}
-
-	private static void createIgnoredStudentsSheet(Workbook workbook, Set<Student> ignoredSStudents) {
-		Sheet sheet = workbook.createSheet(IGNORED_STUDENT_SHEET_TITLE);
-		setHeadings(sheet, HEADINGS_FOR_STUDENTS_IN_ONLY_ONE_SYSTEM);
-		ignoredSStudents.stream()
-			.forEach(student -> createScilympiadStudentRow(sheet, student));
-		sheet.createFreezePane(0, 1);
-		autoSizeColumns(sheet);
-	}
-
-	private static void createExtraCoachesSheet(Workbook workbook, Set<Coach> extraCoaches) {
-		Sheet sheet = workbook.createSheet(EXTRA_COACH_SHEET_TITLE);
-		setHeadings(sheet, HEADINGS_FOR_EXTRA_COACHES);
-		extraCoaches.stream()
-			.forEach(coach -> createExtraCoachRow(sheet, coach));
-		sheet.createFreezePane(0, 1);
-		autoSizeColumns(sheet);
-	}
-
-	private static void createIgnoredCoachesSheet(Workbook workbook, Set<String> ignoredCoaches) {
-		Sheet sheet = workbook.createSheet(IGNORED_COACH_SHEET_TITLE);
-		setHeadings(sheet, HEADINGS_FOR_IGNORED_COACHES);
-		ignoredCoaches.stream()
-			.forEach(email -> createIgnoredCoachRow(sheet, email));
-		sheet.createFreezePane(0, 1);
-		autoSizeColumns(sheet);
-	}
-
-	private void createSNotInPSheet(Workbook workbook) {
-		Sheet sheet = workbook.createSheet(S_NOT_P_SHEET_TITLE);
-		setHeadings(sheet, HEADINGS_FOR_STUDENTS_IN_ONLY_ONE_SYSTEM);
-		engine.getSStudentsNotFoundInP().stream()
-			.forEach(student -> createScilympiadStudentRow(sheet, student));
-		sheet.createFreezePane(0, 1);
-		autoSizeColumns(sheet);
-	}
-
-	private void createPNotInSSheet(Workbook workbook) {
-		Sheet sheet = workbook.createSheet(P_NOT_S_SHEET_TITLE);
-		setHeadings(sheet, HEADINGS_FOR_STUDENTS_IN_ONLY_ONE_SYSTEM);
-		engine.getPStudentsNotFoundInS().stream()
-			.forEach(student -> createPortalStudentRow(sheet, student));
-		sheet.createFreezePane(0, 1);
-		autoSizeColumns(sheet);
-	}
-
 	private String createSchoolReport(String schoolName) {
 		var sStudentsNotInP = engine.getSStudentsNotFoundInP().stream()
 			.filter(student -> student.school().equals(schoolName))
@@ -368,94 +301,6 @@ public class ReportBuilder {
 			return emailBody;
 		} catch (IOException ex) {
 			throw new UncheckedIOException(ex);
-		}
-	}
-
-	private static void createScilympiadStudentRow(Sheet sheet, Student student) {
-		Row row = createNextRow(sheet);
-		createNextCell(row, CellType.STRING)
-			.setCellValue(student.school());
-		createNextCell(row, CellType.STRING)
-			.setCellValue(student.lastName());
-		createNextCell(row, CellType.STRING)
-			.setCellValue(student.firstName());
-		createNextCell(row, CellType.BLANK);
-		createNextCell(row, CellType.NUMERIC)
-			.setCellValue(student.grade());
-	}
-
-	private static void createPortalStudentRow(Sheet sheet, Student student) {
-		Row row = createNextRow(sheet);
-		createNextCell(row, CellType.STRING)
-			.setCellValue(student.school());
-		createNextCell(row, CellType.STRING)
-			.setCellValue(student.lastName());
-		createNextCell(row, CellType.STRING)
-			.setCellValue(student.firstName());
-		createNextCell(row, CellType.STRING)
-			.setCellValue(student.nickName());
-		createNextCell(row, CellType.NUMERIC)
-			.setCellValue(student.grade());
-	}
-
-	private static void createExtraCoachRow(Sheet sheet, Coach coach) {
-		Row row = createNextRow(sheet);
-		createNextCell(row, CellType.STRING)
-			.setCellValue(coach.school());
-		createNextCell(row, CellType.STRING)
-			.setCellValue(coach.lastName());
-		createNextCell(row, CellType.STRING)
-			.setCellValue(coach.firstName());
-		createNextCell(row, CellType.STRING)
-			.setCellValue(coach.email());
-	}
-
-	private static void createIgnoredCoachRow(Sheet sheet, String coachEmail) {
-		Row row = createNextRow(sheet);
-		createNextCell(row, CellType.STRING)
-			.setCellValue(coachEmail);
-	}
-
-	private static void createSchoolNameMappingRow(Sheet sheet, String scilypiadName, String canonicalName) {
-		Row row = createNextRow(sheet);
-		createNextCell(row, CellType.STRING)
-			.setCellValue(scilypiadName);
-		createNextCell(row, CellType.STRING)
-		.setCellValue(canonicalName);
-	}
-
-	private static void setHeadings(Sheet sheet, String... headings) {
-		Row row = createNextRow(sheet);
-		for (String heading : headings) {
-			createNextCell(row, CellType.STRING)
-				.setCellValue(heading);
-		}
-	}
-
-	private static Row createNextRow(Sheet sheet) {
-		// The result from getLastRowNum() does not include the +1:
-		int lastRowNum = sheet.getLastRowNum();
-		return sheet.createRow(
-			(lastRowNum == -1) ? 0 : lastRowNum + 1);
-	}
-
-	private static Cell createNextCell(Row row, CellType cellType, CellStyle cellStyle) {
-		Cell cell = createNextCell(row, cellType);
-		cell.setCellStyle(cellStyle);
-		return cell;
-	}
-
-	private static Cell createNextCell(Row row, CellType cellType) {
-		// The result from getLastCellNum() already includes the +1:
-		int lastCellNum = row.getLastCellNum();
-		return row.createCell(
-			(lastCellNum == -1) ? 0 : lastCellNum,
-			cellType);
-	}
-
-	private static void autoSizeColumns(Sheet sheet) {
-		for (int colNum = 0; colNum < sheet.getRow(0).getLastCellNum(); ++colNum) {
-			sheet.autoSizeColumn(colNum);
 		}
 	}
 

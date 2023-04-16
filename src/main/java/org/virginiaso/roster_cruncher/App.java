@@ -36,10 +36,10 @@ public class App {
 
 	private void run() throws IOException, ParseException {
 		List<Match> matches = Match.parse(masterReportFile);
-		Map<String, String> schoolNameMapping = SchoolNameMappingParser.parse(masterReportFile);
-		Set<Coach> extraCoaches = ExtraCoachParser.parse(masterReportFile);
-		Set<String> ignoredCoaches = IgnoredCoachParser.parse(masterReportFile);
-		Set<Student> ignoredSStudents = IgnoredScilympiadStudentParser.parse(masterReportFile);
+		Map<String, String> schoolNameMapping = new SchoolNameMappingSheet().parse(masterReportFile);
+		Set<Coach> extraCoaches = new ExtraCoachSheet().parse(masterReportFile);
+		Set<String> ignoredCoaches = new IgnoredCoachSheet().parse(masterReportFile);
+		Set<Student> ignoredSStudents = new IgnoredScilympiadStudentSheet().parse(masterReportFile);
 		List<Student> pStudents = StudentRetrieverFactory.create().readLatestReportFile();
 		Set<Student> sStudents = ScilympiadParser.readLatestRosterFile(schoolNameMapping);
 

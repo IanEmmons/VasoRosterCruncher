@@ -4,7 +4,7 @@ plugins {
 }
 
 group = 'org.virginiaso'
-version = '0.0.2'
+version = '0.0.3'
 sourceCompatibility = '17'
 
 repositories {
@@ -14,13 +14,13 @@ repositories {
 dependencies {
 	implementation 'org.apache.commons:commons-lang3:3.12.0'
 	implementation 'org.apache.commons:commons-text:1.10.0'
-	implementation 'com.google.code.gson:gson:2.10'
+	implementation 'com.google.code.gson:gson:2.10.1'
 	implementation 'javax.mail:javax.mail-api:1.6.2'
 	implementation 'com.sun.mail:javax.mail:1.6.2'
 	implementation 'org.apache.poi:poi-ooxml:5.2.3'
-	implementation 'org.apache.logging.log4j:log4j-core:2.19.0'
+	implementation 'org.apache.logging.log4j:log4j-core:2.20.0'
 
-	testImplementation 'org.junit.jupiter:junit-jupiter:5.9.1'
+	testImplementation 'org.junit.jupiter:junit-jupiter:5.9.2'
 }
 
 tasks.withType(JavaCompile) {
@@ -29,6 +29,10 @@ tasks.withType(JavaCompile) {
 
 application {
 	mainClass = 'org.virginiaso.roster_cruncher.App'
+}
+
+test {
+	useJUnitPlatform()
 }
 
 task getPortalRoster(type: JavaExec) {
@@ -50,8 +54,4 @@ task sendTestEmail(type: JavaExec) {
 	mainClass = 'org.virginiaso.roster_cruncher.Emailer'
 	classpath = sourceSets.main.runtimeClasspath
 	systemProperty 'mail.password', "$mailPassword"
-}
-
-test {
-	useJUnitPlatform()
 }
