@@ -7,8 +7,10 @@ build/
 div-a-2021-archive/
 div-a-2022-archive/
 div-bc-2022-archive/
+div-bc-2023-archive/
 portal-reports/
 reports-202*/
 scilympiad-reports/
 master-report.xlsx
 ~$*.xlsx
+*.code-workspace
