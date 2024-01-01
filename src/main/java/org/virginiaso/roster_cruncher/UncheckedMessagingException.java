@@ -1,6 +1,6 @@
 package org.virginiaso.roster_cruncher;
 
-import javax.mail.MessagingException;
+import jakarta.mail.MessagingException;
 
 public class UncheckedMessagingException extends RuntimeException {
 	private static final long serialVersionUID = 1L;

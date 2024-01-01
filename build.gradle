@@ -3,24 +3,26 @@ plugins {
 	id 'eclipse'
 }
 
-group = 'org.virginiaso'
-version = '0.0.3'
-sourceCompatibility = '17'
-
 repositories {
 	mavenCentral()
 }
 
 dependencies {
-	implementation 'org.apache.commons:commons-lang3:3.12.0'
-	implementation 'org.apache.commons:commons-text:1.10.0'
 	implementation 'com.google.code.gson:gson:2.10.1'
 	implementation 'jakarta.mail:jakarta.mail-api:2.1.2'
-	implementation 'org.eclipse.angus:jakarta.mail:2.0.2'
-	implementation 'org.apache.poi:poi-ooxml:5.2.3'
-	implementation 'org.apache.logging.log4j:log4j-core:2.20.0'
+	implementation 'org.apache.commons:commons-lang3:3.14.0'
+	implementation 'org.apache.commons:commons-text:1.11.0'
+	implementation 'org.apache.logging.log4j:log4j-core:2.22.1'
+	implementation 'org.apache.poi:poi-ooxml:5.2.5'
+}
 
-	testImplementation 'org.junit.jupiter:junit-jupiter:5.9.2'
+group = 'org.virginiaso'
+version = '0.0.3'
+
+java {
+	toolchain {
+		languageVersion = JavaLanguageVersion.of(21)
+	}
 }
 
 tasks.withType(JavaCompile) {
@@ -31,8 +33,12 @@ application {
 	mainClass = 'org.virginiaso.roster_cruncher.App'
 }
 
-test {
-	useJUnitPlatform()
+testing {
+	suites {
+		test {
+			useJUnitJupiter('5.9.3')
+		}
+	}
 }
 
 task getPortalRoster(type: JavaExec) {

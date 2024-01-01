@@ -3,7 +3,7 @@ package org.virginiaso.roster_cruncher;
 import java.io.File;
 import java.util.Properties;
 
-import javax.mail.Session;
+import jakarta.mail.Session;
 
 public class Config {
 	private static class ConfigHolder {
