@@ -43,11 +43,13 @@ public class PortalUserToken {
 			.POST(BodyPublishers.ofString(requestBody))
 			.header("Content-Type", Util.JSON_MEDIA_TYPE)
 			.build();
-		HttpClient.newHttpClient()
-			.sendAsync(httpRequest, BodyHandlers.ofString())
-			.thenApply(HttpResponse::body)
-			.thenAccept(this::interpretResponse)
-			.join();
+		try (var httpClient = HttpClient.newHttpClient()) {
+			httpClient
+				.sendAsync(httpRequest, BodyHandlers.ofString())
+				.thenApply(HttpResponse::body)
+				.thenAccept(this::interpretResponse)
+				.join();
+		}
 		System.out.format("Found user token '%1$s'%n", userToken);
 	}
 

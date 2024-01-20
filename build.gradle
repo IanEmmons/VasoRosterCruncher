@@ -36,7 +36,7 @@ application {
 testing {
 	suites {
 		test {
-			useJUnitJupiter('5.9.3')
+			useJUnitJupiter('5.10.1')
 		}
 	}
 }

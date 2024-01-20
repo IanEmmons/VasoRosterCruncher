@@ -90,12 +90,13 @@ public class PortalRetriever<Item> {
 	public void saveRawReport() throws IOException {
 		var httpRequest = getHttpRequest(1);
 		var stringHolder = new StringHolder();
-		HttpClient.newHttpClient()
-			.sendAsync(httpRequest, BodyHandlers.ofString())
-			.thenApply(HttpResponse::body)
-			.thenAccept(body -> stringHolder.string = body)
-			.join();
-
+		try (var httpClient = HttpClient.newHttpClient()) {
+			httpClient
+				.sendAsync(httpRequest, BodyHandlers.ofString())
+				.thenApply(HttpResponse::body)
+				.thenAccept(body -> stringHolder.string = body)
+				.join();
+		}
 		var fileName = "raw-portal-%1$s-report-body.json".formatted(reportName);
 		try (var pw = new PrintWriter(fileName, Util.CHARSET)) {
 			pw.print(stringHolder.string);
@@ -121,11 +122,13 @@ public class PortalRetriever<Item> {
 	private void retrieveReport() {
 		for (int currentPage = 1;; ++currentPage) {
 			var httpRequest = getHttpRequest(currentPage);
-			HttpClient.newHttpClient()
-				.sendAsync(httpRequest, BodyHandlers.ofInputStream())
-				.thenApply(HttpResponse::body)
-				.thenAccept(is -> reportItems.addAll(readJsonReport(is, this)))
-				.join();
+			try (var httpClient = HttpClient.newHttpClient()) {
+				httpClient
+					.sendAsync(httpRequest, BodyHandlers.ofInputStream())
+					.thenApply(HttpResponse::body)
+					.thenAccept(is -> reportItems.addAll(readJsonReport(is, this)))
+					.join();
+			}
 			if (lastPageRead >= totalPages) {
 				break;
 			}
