@@ -8,7 +8,6 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
 import java.io.Reader;
 import java.io.UncheckedIOException;
 import java.io.Writer;
@@ -84,22 +83,23 @@ public class PortalRetriever<Item> {
 		reportItems = new ArrayList<>();
 	}
 
-	private static class StringHolder {
-		public String string = null;
-	}
-	public void saveRawReport() throws IOException {
+	public void saveRawReport() {
+		var fileName = "raw-portal-%1$s-report-body.json".formatted(reportName);
 		var httpRequest = getHttpRequest(1);
-		var stringHolder = new StringHolder();
 		try (var httpClient = HttpClient.newHttpClient()) {
 			httpClient
-				.sendAsync(httpRequest, BodyHandlers.ofString())
+				.sendAsync(httpRequest, BodyHandlers.ofInputStream())
 				.thenApply(HttpResponse::body)
-				.thenAccept(body -> stringHolder.string = body)
+				.thenAccept(is -> writeToFile(is, fileName))
 				.join();
 		}
-		var fileName = "raw-portal-%1$s-report-body.json".formatted(reportName);
-		try (var pw = new PrintWriter(fileName, Util.CHARSET)) {
-			pw.print(stringHolder.string);
+	}
+
+	private static void writeToFile(InputStream is, String fileName) {
+		try (var os = new FileOutputStream(fileName)) {
+			is.transferTo(os);
+		} catch (IOException ex) {
+			throw new UncheckedIOException(ex);
 		}
 	}
 
